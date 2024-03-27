@@ -11,3 +11,10 @@ HALF_LEVEL_H = LEVEL_H // 2
 
 PLAYER_W = 20
 PLAYER_H = 25
+
+
+
+
+
+#---------------------
+MAX_ANIMATION_FRAMES = 4 # Used in game_actors.py
