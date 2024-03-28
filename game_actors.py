@@ -62,6 +62,7 @@ class Base_Actor(Actor):
     -------
     hurt(damage)        - Reduces the creatures health by "damage" and sets the 
                           number of hurt frames to "HURT_DURATION".
+    check_dead()        - Checks if the creatures health is 0 and runs "remove".
     collision(player)   - Placeholder to be overwritten by children.
     remove()            - Deletes the creature.
     move(player)        - Moves the creature by (dx, dy)*speed incrementally and
@@ -109,6 +110,12 @@ class Base_Actor(Actor):
 
         self.health -= damage
         self.img_hurt_frame = HURT_DURATION
+
+    def check_dead(self):
+        """Checks if the creatures health is 0 and runs "remove"."""
+        if self.health <= 0:
+            ##### Death event
+            self.remove()
 
     def collision(self, player):
         """Placeholder to be overwritten by children. Returns False."""
@@ -158,20 +165,69 @@ class Base_Actor(Actor):
         if self.img_hurt_frame > 0:
             self.image += "_hurt"
             self.img_hurt_frame -= 1
-
+        
         self.move(player)
-
+        self.check_dead()
+        
 
 class Player(Base_Actor):
+    """A class that describes the player character.
+
+    Child of Base_Actor
+
+    Methods
+    -------
+    move(player)        - Moves the player by (dx, dy)*speed incrementally and
+                          checks that the player is not moving out of the levels
+                          bounds.
+    check_dead()        - Special player is dead case. (TODO)
+    movement_direction()
+    update()
+    """
+    __doc__ += super.__doc__
+
     def __init__(self, img, x, y, speed, health, img_dir=""):
+        """Constructs the Player class.
+
+        Parameters
+        ----------
+        img : str           - image name (without frame number or direction)
+        x : int             - starting x coordinate of creature
+        y : int             - starting y coordinate of creature
+        speed : int         - speed of creature
+        health : int        - health of creature
+        img_dir : str       - sub directory of image (optional)
+        """
+
         super().__init__(img, x, y, speed, health, img_dir)
     
-    def hurt(self, damage):
-        super().hurt(damage)
-        if self.health <= 0:
-            pass ##### Whatever happens when the player dies
+    def move(self, player):
+        """Moves the player by (dx, dy)*speed incrementally. Each increment 
+        check the player is not about to move out of bounds and if they are
+        stop them.
+
+        Parameters
+        ----------
+        player : obj        - the player character object
+        """
+
+        for i in self.speed():
+            if not (self.x + self.dx < 0 or self.x + self.dx > LEVEL_W):
+                self.x += self.dx
+            if not (self.y + self.dy < 0 or self.y + self.dy > LEVEL_H):
+                self.y += self.dy
+            
+
+    def check_dead(self):
+        """Special player is dead case."""
+
+        print("Dead")
 
     def movement_direction(self):
+        """Calculates the players movement direction based on keyboard inputs
+        and normalises dx and dy.
+        """
+
         self.dx = 0
         self.dy = 0
 
@@ -187,6 +243,10 @@ class Player(Base_Actor):
         self.dx, self.dy = normalise(self.dx, self.dy)
     
     def update(self):
+        """Runs every game update. Runs "movement_direction" and parents 
+        "update".
+        """
+        
         self.movement_direction()
         super.update(self)
 
