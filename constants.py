@@ -1,3 +1,6 @@
+from pgzero.builtins import keyboard
+
+
 WIDTH = 800
 HEIGHT = 480
 HALF_WINDOW_W = WIDTH / 2

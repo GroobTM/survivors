@@ -1,11 +1,20 @@
+"""Monster and Player Framework
+
+This module creates the framework for different types of monster enemies and
+the framework for the player character (including controls).
+"""
+
+__version__ = "0.1"
+__author__ = "Reuben Wiles Maguire"
+
 from pgzero.builtins import Actor, keyboard, keys
 from constants import MAX_ANIMATION_FRAMES, LEVEL_H, LEVEL_W
-from globals import player_pos
 from numpy import hypot
 from time import time
 
 HURT_DURATION = 2
 HURT_COOLDOWN = 10
+
 
 def normalise(dx, dy):
     """Normalises a vector.
@@ -21,6 +30,7 @@ def normalise(dx, dy):
     """
 
     return [dx, dy] / hypot(dx, dy)
+
 
 class Base_Actor(Actor):
     """A class that describes the basic functions of the games creatures.
@@ -151,6 +161,36 @@ class Base_Actor(Actor):
 
         self.move(player)
 
+
+class Player(Base_Actor):
+    def __init__(self, img, x, y, speed, health, img_dir=""):
+        super().__init__(img, x, y, speed, health, img_dir)
+    
+    def hurt(self, damage):
+        super().hurt(damage)
+        if self.health <= 0:
+            pass ##### Whatever happens when the player dies
+
+    def movement_direction(self):
+        self.dx = 0
+        self.dy = 0
+
+        if keyboard.right or keyboard.d:
+            self.dx += 1
+        if keyboard.left or keyboard.a:
+            self.dx -= 1
+        if keyboard.up or keyboard.w:
+            self.dy += 1
+        if keyboard.down or keyboard.s:
+            self.dy -= 1
+        
+        self.dx, self.dy = normalise(self.dx, self.dy)
+    
+    def update(self):
+        self.movement_direction()
+        super.update(self)
+
+
 class Monster(Base_Actor):
     """A class that describes basic monsters.
 
@@ -236,6 +276,7 @@ class Monster(Base_Actor):
         self.dx, self.dy = self.calculate_direction(player)
         super().update(player)
 
+
 class Charger(Monster):
     """A class describing monsters that charge in a straight line.
     
@@ -313,3 +354,4 @@ class Charger(Monster):
             self.y < -100 or self.y > LEVEL_H + 100):
             self.remove()
         super(Monster, self).update(player)
+
