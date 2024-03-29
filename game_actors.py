@@ -8,7 +8,7 @@ __version__ = "0.1"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import MAX_ANIMATION_FRAMES, LEVEL_H, LEVEL_W
+from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W
 from numpy import hypot
 from time import time
 
@@ -28,8 +28,11 @@ def normalise(dx, dy):
     ------
     (float, float)      - normalised vector
     """
-
-    return [dx, dy] / hypot(dx, dy)
+    hyp = hypot(dx, dy)
+    if hyp != 0:
+        return [dx, dy] / hyp
+    else:
+        return (0, 0)
 
 
 class Base_Actor(Actor):
@@ -90,15 +93,17 @@ class Base_Actor(Actor):
         self.img_dir = img_dir
         if img_dir != "":
             self.img_dir += "\\"
-        cur_img = f"{self.img_dir}{self.img_base}_{self.img_direction}\
-        {self.img_frame}"
+        cur_img = f"{self.img_dir}{self.img_base}"\
+                  f"_{self.img_direction}{self.img_frame}"
+                  
         super().__init__(cur_img, (x, y))
         self.speed = speed
         self.health = health
         self.dx = 0
         self.dy = 0
         self.img_hurt_frame = 0
-        
+        self.img_frame_counter = 0
+    
     def hurt(self, damage):
         """Reduces the creatures health by "damage" and sets "img_hurt_frame" 
         to "HURT_DURATION".
@@ -149,8 +154,10 @@ class Base_Actor(Actor):
         ----------
         player : obj        - the player character object
         """
-
-        self.img_frame += 1
+        self.img_frame_counter += 1
+        if self.img_frame_counter > FRAME_TIME:
+            self.img_frame_counter = 0
+            self.img_frame += 1
         if self.img_frame > MAX_ANIMATION_FRAMES:
             self.img_frame = 1
 
@@ -159,8 +166,9 @@ class Base_Actor(Actor):
         elif self.dx > 0:
             self.img_direction = "r"
 
-        self.image = f"{self.img_dir}{self.img_base}_{self.img_direction}\
-            {self.img_frame}"
+        self.image = f"{self.img_dir}{self.img_base}"\
+                     f"_{self.img_direction}{self.img_frame}"
+
         
         if self.img_hurt_frame > 0:
             self.image += "_hurt"
@@ -168,6 +176,10 @@ class Base_Actor(Actor):
         
         self.move(player)
         self.check_dead()
+
+    def draw(self, offset_x, offset_y):
+        self.pos = (self.x - offset_x, self.y - offset_y)
+        super().draw()
         
 
 class Player(Base_Actor):
@@ -210,18 +222,21 @@ class Player(Base_Actor):
         ----------
         player : obj        - the player character object
         """
-
-        for i in self.speed():
-            if not (self.x + self.dx < 0 or self.x + self.dx > LEVEL_W):
-                self.x += self.dx
-            if not (self.y + self.dy < 0 or self.y + self.dy > LEVEL_H):
-                self.y += self.dy
+        self.x += self.dx*self.speed
+        self.y += self.dy*self.speed
+        #for i in range(self.speed):
+            #if not (self.x + self.dx < 0 or self.x + self.dx > LEVEL_W):
+        #    self.x += self.dx
+            #self.x = max(0,min(self.x, LEVEL_W))  
+            #if not (self.y + self.dy < 0 or self.y + self.dy > LEVEL_H):
+        #    self.y += self.dy
+            #self.y = max(0,min(self.y, LEVEL_H))  
             
 
     def check_dead(self):
         """Special player is dead case."""
-
-        print("Dead")
+        if self.health <= 0:
+            print("Dead")
 
     def movement_direction(self):
         """Calculates the players movement direction based on keyboard inputs
@@ -236,9 +251,9 @@ class Player(Base_Actor):
         if keyboard.left or keyboard.a:
             self.dx -= 1
         if keyboard.up or keyboard.w:
-            self.dy += 1
-        if keyboard.down or keyboard.s:
             self.dy -= 1
+        if keyboard.down or keyboard.s:
+            self.dy += 1
         
         self.dx, self.dy = normalise(self.dx, self.dy)
     
@@ -248,7 +263,7 @@ class Player(Base_Actor):
         """
         
         self.movement_direction()
-        super.update(self)
+        super().update(self)
 
 
 class Monster(Base_Actor):
