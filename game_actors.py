@@ -8,7 +8,8 @@ __version__ = "0.1"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W, PLAYER_H, PLAYER_W
+from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W, \
+                      PLAYER_H, PLAYER_W
 from numpy import hypot
 from time import time
 
@@ -66,7 +67,7 @@ class Base_Actor(Actor):
     hurt(damage)        - Reduces the creatures health by "damage" and sets the 
                           number of hurt frames to "HURT_DURATION".
     check_dead()        - Checks if the creatures health is 0 and runs "remove".
-    collision(player)   - Placeholder to be overwritten by children.
+    collision(player) : bool    - Placeholder to be overwritten by children.
     remove()            - Deletes the creature.
     move(player)        - Moves the creature by (dx, dy)*speed incrementally and
                           runs "remove" if "collision" returns True.
@@ -286,9 +287,10 @@ class Monster(Base_Actor):
 
     Methods
     -------
-    calculate_direction(player) - Finds the direction of the player character 
-                          from the mosters current position.
-    collision(player)   - Detects collisions between the monster and the player.
+    calculate_direction(player) : (float, float)    - Finds the direction of the
+                          player character from the mosters current position.
+    collision(player) : bool    - Detects collisions between the monster and 
+                          the player.
     update(player)      - Runs every game update. Runs "calculate_direction" and
                           parents "update".
     
@@ -372,9 +374,9 @@ class Charger(Monster):
 
     Methods
     -------
-    collision(player)   - Dectects collisions between the charger and the player
-                          character and runs "hurt" if its attack is not on 
-                          cooldown.
+    collision(player) : bool    - Dectects collisions between the charger and 
+                          the player character and runs "hurt" if its attack is
+                          not on cooldown.
     update(player)      - Runs every game update. Runs "remove" if the charger
                           runs off the edge of the level. Then runs parents 
                           "update".

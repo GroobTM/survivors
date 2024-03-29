@@ -10,7 +10,6 @@ __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor
 from time import time
-from globals import mob_list, player_pos
 from numpy import radians, sin, cos
 
 
@@ -51,20 +50,20 @@ class Weapon(Actor):
 
     Methods
     -------
-    collision()         - Detects and handles collisions between the weapon
+    collision(mob_list) - Detects and handles collisions between the weapon
                           and mobs.
     check_duration()    - Checks how long the weapon has been around and removes
                           it if its life exceeds the weapons duration.
     remove()            - Deletes the weapon.
-    movement_calc() : [int, int] - Calculates how far the player has moved since
-                          the last update.
+    movement_calc(player_pos) : [int, int]  - Calculates how far the player has 
+                          moved since the last update.
     move()              - Moves the weapon by (dx,dy)*speed and runs 
                           "collision".
     draw(offset_x, offset_y)    - Calculates where to draw the weapon. Then,
                           calls parent "draw".
     """
 
-    def __init__(self, img, damage, duration, dx, dy, pierce = -1):
+    def __init__(self, img, damage, duration, dx, dy, player_pos, pierce = -1):
         """Constructs all attributes for the Weapon class.
 
         Parameters
@@ -74,13 +73,14 @@ class Weapon(Actor):
         duration : float    - amount of time the weapon exists for
         dx : float          - x component of unit vector
         dy : float          - y component of unit vector
+        player_pos : (float, float) - the current position of the player
         pierce : int        - number of mobs the weapon can penetrate (optional)
         """
 
-        super.__init__(img, tuple(player_pos))
+        super.__init__(img, player_pos)
         self.damage = damage
         self.duration = duration
-        self.x_pos, self.y_pos = player_pos ### Change for parsed player
+        self.x_pos, self.y_pos = player_pos
         self.dx = dx
         self.dy = dy
         self.pierce = pierce # -1 means infinite
@@ -88,16 +88,19 @@ class Weapon(Actor):
         self.spawn_time = time()
         self.player_pos_old = player_pos
         
-    def collision(self):
+    def collision(self, mob_list):
         """Detects collisions between the weapon and mobs. Causes damage to mobs
         it collides with. Reduces pierce if applicable and calls "remove" if 
         pierce reaches 0.
+
+        Parameters
+        ----------
+        mob_list : [obj]    - list of mobs currently alive
         """
 
-        collision_index = self.collidelist(mob_list) # From Actor
+        collision_index = self.collidelist(mob_list)
         if collision_index != -1:
-            mob_list[collision_index].lose_health(self.damage)
-            #### need to add a lose_health method to mobs
+            mob_list[collision_index].hurt(self.damage)
             if self.pierce != -1:
                 self.pierce -= 1
                 if self.pierce == 0:
@@ -116,8 +119,12 @@ class Weapon(Actor):
 
         del self
 
-    def movement_calc(self):
+    def movement_calc(self, player_pos):
         """Calculates how far the player has moved since the last update.
+
+        Parameters
+        ----------
+        player_pos : (float, float) - the current position of the player
 
         Return
         ------
@@ -125,20 +132,24 @@ class Weapon(Actor):
                           current position
         """
 
-        move = [player_pos[0] - self.player_pos_old[0],
-                player_pos[1] - self.player_pos_old[1]]
+        move = [player_pos.pos[0] - self.player_pos_old[0],
+                player_pos.pos[1] - self.player_pos_old[1]]
         self.player_pos_old = player_pos
         return move
     
-    def move(self, dx, dy, speed):
+    def move(self, dx, dy, speed, mob_list):
         """Moves the weapon by (dx,dy)*speed incrementally and runs 
         "collision" at each increment.
+
+        Parameters
+        ----------
+        dx
         """
 
         for i in range(speed):
             self.x_pos += dx
             self.y_pos += dy
-            self.collision()
+            self.collision(mob_list)
 
     def draw(self, offset_x, offset_y):
         """Calculates where to draw the weapon. Then, calls parent "draw".
@@ -172,7 +183,7 @@ class Projectile(Weapon):
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, damage, duration, dx, dy, speed, pierce=-1):
+    def __init__(self, img, damage, duration, dx, dy, player_pos, speed, pierce=-1):
         """Constructs all attributes for the Projectile class.
 
         Parameters
@@ -182,15 +193,18 @@ class Projectile(Weapon):
         duration : float    - amount of time the projectile exists for
         dx : float          - x component of unit vector
         dy : float          - y component of unit vector
+        player_pos : (float, float) - the current position of the player
         speed : int         - speed of the projectile
         pierce : int        - number of mobs the projectile can penetrate 
                               (optional)
         """
-        super().__init__(img, damage, duration, dx, dy, pierce)
+
+        super().__init__(img, damage, duration, dx, dy, player_pos, pierce)
         self.speed = speed
 
     def update(self):
         """Runs every game update. Runs "move" and "check_duration"."""
+
         self.move(self.dx, self.dy, self.speed)
         self.check_duration()
 
@@ -203,7 +217,7 @@ class Stab(Projectile):
 
     Methods
     -------
-    update()            - Runs every game update. Runs "movement_calc" and
+    update(player_pos)  - Runs every game update. Runs "movement_calc" and
                           offsets x and y. Then runs parents "update".
     
     Parent
@@ -211,7 +225,8 @@ class Stab(Projectile):
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, damage, duration, dx, dy, speed, pierce=-1):
+    def __init__(self, img, damage, duration, dx, dy, player_pos, speed, 
+                 pierce=-1):
         """Constructs all attributes for the Stab class.
 
         Parameters
@@ -221,17 +236,25 @@ class Stab(Projectile):
         duration : float    - amount of time the stab exists for
         dx : float          - x component of unit vector
         dy : float          - y component of unit vector
+        player_pos : (float, float) - the current position of the player
         speed : int         - speed of the stab
         pierce : int        - number of mobs the stab can penetrate (optional)
         """
-        super().__init__(img, damage, duration, dx, dy, speed, pierce)
+
+        super().__init__(img, damage, duration, dx, dy, player_pos, speed, 
+                         pierce)
     
-    def update(self):
+    def update(self, player_pos):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs parents 
         "update".
+
+        Parameters
+        ----------
+        player_pos : (float, float) - the current position of the player
         """
-        player_movement = self.movement_calc()
+
+        player_movement = self.movement_calc(player_pos)
         self.move(player_movement[0], player_movement[1], 1)
         super().update()
 
@@ -250,7 +273,7 @@ class Aura(Weapon):
     move()              - Moves the weapon by (dx,dy) and runs "collision" if
                           the time since the aura last activated exceded the 
                           interval.
-    update()            - Runs every game update. Runs "movement_calc", "move",
+    update(player_pos)  - Runs every game update. Runs "movement_calc", "move",
                           and "check_duration".
 
     Parent
@@ -258,7 +281,7 @@ class Aura(Weapon):
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, damage, duration, interval):
+    def __init__(self, img, damage, duration, player_pos, interval):
         """Constructs all attributes for the Aura class.
 
         Parameters
@@ -266,12 +289,13 @@ class Aura(Weapon):
         img : str           - name of a png file in ./images used for sprite
         damage : int        - amount of damage dealt by the aura
         duration : float    - amount of time the aura exists for
+        player_pos : (float, float) - the current position of the player
         interval : float    - amount of time between aura activations
         """
 
         self.interval = interval
         self.last_activation = time() - interval # Forces attck on first update
-        super().__init__(img, damage, duration, 0, 0, -1)
+        super().__init__(img, damage, duration, 0, 0, player_pos, -1)
     
     def move(self, dx, dy):
         """Moves the weapon by (dx,dy) and runs "collision" if the time since
@@ -281,16 +305,20 @@ class Aura(Weapon):
         self.x_pos += dx
         self.y_pos += dy
         if time() - self.last_activation >= self.interval:
-            self.collision()
+            self.collision(mob_list)
             self.last_activation = time()
     
-    def update(self):
+    def update(self, player_pos):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs 
         "check_duration".
+
+        Parameters
+        ----------
+        player_pos : (float, float) - the current position of the player
         """
 
-        player_movement = self.movement_calc()
+        player_movement = self.movement_calc(player_pos)
         self.move(player_movement[0], player_movement[1])
         self.check_duration()
 
@@ -315,7 +343,7 @@ class Orbital(Weapon):
                           steps and runs "collision" at each step.
     rotate_limit()      - Checks if the orbital has exceeded its "max_rotation"
                           and runs "remove" if it has.
-    update()            - Runs every game update. Runs "movement_calc", "move",
+    update(player_pos)  - Runs every game update. Runs "movement_calc", "move",
                           "rotate", "rotate_limit" and "check_duration".
 
     Parent
@@ -323,7 +351,7 @@ class Orbital(Weapon):
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, damage, duration, radius, speed, max_rotation,
+    def __init__(self, img, damage, duration, player_pos, radius, speed, max_rotation,
                  starting_angle = 0):
         """Constructs all attributes for the Orbital class.
 
@@ -332,6 +360,7 @@ class Orbital(Weapon):
         img : str           - name of a png file in ./images used for sprite
         damage : int        - amount of damage dealt by the orbital
         duration : float    - amount of time the orbital exists for
+        player_pos : (float, float) - the current position of the player
         radius : int        - radius of the orbital
         speed : int         - linear speed of the orbital
         max_rotation : int  - max angle the orbital can rotate to
@@ -343,7 +372,7 @@ class Orbital(Weapon):
         self.angular_speed = speed / radius
         self.max_rotation = max_rotation * sign(speed) + starting_angle
         self.cur_angle = starting_angle
-        super().__init__(img, damage, duration, 0, 0, -1)
+        super().__init__(img, damage, duration, 0, 0, player_pos -1)
 
         # Attack does not originate from the player so a new starting position
         # needs to be set.
@@ -360,7 +389,7 @@ class Orbital(Weapon):
             self.cur_angle += angle_step
             self.x_pos = self.radius*cos(radians(self.cur_angle))
             self.y_pos = self.radius*sin(radians(self.cur_angle))
-            self.collision()
+            self.collision(mob_list)
 
     def rotate_limit(self):
         """Checks if the orbital has exceeded its "max_rotation" and runs 
@@ -370,12 +399,16 @@ class Orbital(Weapon):
             (self.speed > 0 and self.max_rotation > self.cur_angle)):
             self.remove()
 
-    def update(self):
+    def update(self, player_pos):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs "rotate", 
         "rotate_limit", and "check_duration".
+
+        Parameters
+        ----------
+        player_pos : (float, float) - the current position of the player
         """
-        player_movement = self.movement_calc()
+        player_movement = self.movement_calc(player_pos)
         self.move(player_movement[0], player_movement[1], 1)
         self.rotate()
         self.rotate_limit()
