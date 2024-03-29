@@ -39,8 +39,8 @@ class Weapon(Actor):
     Attributes
     ----------
     img : str           - name of a png file in ./images used for sprite
-    x : int             - x coordinate of the sprite
-    y : int             - y coordinate of the sprite
+    x_pos : int         - x coordinate of the sprite
+    y_pos : int         - y coordinate of the sprite
     damage : int        - amount of damage dealt by the weapon
     duration : float    - amount of time the weapon exists for
     dx : float          - x component of unit vector
@@ -60,6 +60,8 @@ class Weapon(Actor):
                           the last update.
     move()              - Moves the weapon by (dx,dy)*speed and runs 
                           "collision".
+    draw(offset_x, offset_y)    - Calculates where to draw the weapon. Then,
+                          calls parent "draw".
     """
 
     def __init__(self, img, damage, duration, dx, dy, pierce = -1):
@@ -78,6 +80,7 @@ class Weapon(Actor):
         super.__init__(img, tuple(player_pos))
         self.damage = damage
         self.duration = duration
+        self.x_pos, self.y_pos = player_pos ### Change for parsed player
         self.dx = dx
         self.dy = dy
         self.pierce = pierce # -1 means infinite
@@ -133,9 +136,21 @@ class Weapon(Actor):
         """
 
         for i in range(speed):
-            self.x += dx
-            self.y += dy
+            self.x_pos += dx
+            self.y_pos += dy
             self.collision()
+
+    def draw(self, offset_x, offset_y):
+        """Calculates where to draw the weapon. Then, calls parent "draw".
+        
+        Parameters
+        ----------
+        offset_x : float    - difference between real and virtual x position
+        offset_y : float    - difference between real and virtual y position
+        """
+
+        self.pos = (self.x_pos - offset_x, self.y_pos - offset_y)
+        super().draw()
         
 
 class Projectile(Weapon):
@@ -263,8 +278,8 @@ class Aura(Weapon):
         the aura last activated exceded the interval.
         """
 
-        self.x += dx
-        self.y += dy
+        self.x_pos += dx
+        self.y_pos += dy
         if time() - self.last_activation >= self.interval:
             self.collision()
             self.last_activation = time()
@@ -332,8 +347,8 @@ class Orbital(Weapon):
 
         # Attack does not originate from the player so a new starting position
         # needs to be set.
-        self.x = radius*cos(radians(starting_angle))
-        self.y = radius*sin(radians(starting_angle))
+        self.x_pos = radius*cos(radians(starting_angle))
+        self.y_pos = radius*sin(radians(starting_angle))
 
     def rotate(self):
         """Moves the orbital its "angular_speed" over incremental steps and runs
@@ -343,8 +358,8 @@ class Orbital(Weapon):
         angle_step = self.angular_speed/self.speed
         for i in range(self.speed):
             self.cur_angle += angle_step
-            self.x = self.radius*cos(radians(self.cur_angle))
-            self.y = self.radius*sin(radians(self.cur_angle))
+            self.x_pos = self.radius*cos(radians(self.cur_angle))
+            self.y_pos = self.radius*sin(radians(self.cur_angle))
             self.collision()
 
     def rotate_limit(self):

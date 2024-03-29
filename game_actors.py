@@ -8,7 +8,7 @@ __version__ = "0.1"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W
+from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W, PLAYER_H, PLAYER_W
 from numpy import hypot
 from time import time
 
@@ -48,8 +48,8 @@ class Base_Actor(Actor):
     image : str         - combination of above attributes
     speed : int         - speed of creature
     health : int        - health of creature
-    x : int             - x coordinate of creature
-    y : int             - y coordinate of creature
+    x_pos : int         - x coordinate of creature
+    y_pos : int         - y coordinate of creature
     dx : float          - x component of creature movement
     dy : float          - y component of creature movement
 
@@ -72,6 +72,8 @@ class Base_Actor(Actor):
                           runs "remove" if "collision" returns True.
     update(player)      - Runs every game update. Works out the next animation 
                           frame and updates it. Runs "move".
+    draw(offset_x, offset_y)    - Calculates where to draw creature. Then, calls
+                          parent "draw".
     """
 
     def __init__(self, img, x, y, speed, health, img_dir=""):
@@ -99,6 +101,8 @@ class Base_Actor(Actor):
         super().__init__(cur_img, (x, y))
         self.speed = speed
         self.health = health
+        self.x_pos = x
+        self.y_pos = y
         self.dx = 0
         self.dy = 0
         self.img_hurt_frame = 0
@@ -143,8 +147,8 @@ class Base_Actor(Actor):
         for i in self.speed():
             if self.collision(player):
                 self.remove()
-            self.x += self.dx
-            self.y += self.dy
+            self.x_pos += self.dx
+            self.y_pos += self.dy
 
     def update(self, player):
         """Runs every game update. Works out the next animation frame based on 
@@ -178,7 +182,15 @@ class Base_Actor(Actor):
         self.check_dead()
 
     def draw(self, offset_x, offset_y):
-        self.pos = (self.x - offset_x, self.y - offset_y)
+        """Calculates where to draw creature. Then, calls parent "draw".
+        
+        Parameters
+        ----------
+        offset_x : float    - difference between real and virtual x position
+        offset_y : float    - difference between real and virtual y position
+        """
+
+        self.pos = (self.x_pos - offset_x, self.y_pos - offset_y)
         super().draw()
         
 
@@ -222,15 +234,12 @@ class Player(Base_Actor):
         ----------
         player : obj        - the player character object
         """
-        self.x += self.dx*self.speed
-        self.y += self.dy*self.speed
-        #for i in range(self.speed):
-            #if not (self.x + self.dx < 0 or self.x + self.dx > LEVEL_W):
-        #    self.x += self.dx
-            #self.x = max(0,min(self.x, LEVEL_W))  
-            #if not (self.y + self.dy < 0 or self.y + self.dy > LEVEL_H):
-        #    self.y += self.dy
-            #self.y = max(0,min(self.y, LEVEL_H))  
+
+        for i in range(self.speed):
+            self.x_pos += self.dx
+            self.x_pos = max(0 + PLAYER_W, min(self.x_pos, LEVEL_W - PLAYER_W))
+            self.y_pos += self.dy
+            self.y_pos = max(0 + PLAYER_H, min(self.y_pos, LEVEL_H - PLAYER_H))
             
 
     def check_dead(self):
@@ -319,7 +328,7 @@ class Monster(Base_Actor):
                               and the monster.
         """
 
-        return normalise(player.x - self.x, player.y - self.y)
+        return normalise(player.x_pos - self.x_pos, player.y_pos - self.y_pos)
     
     def collision(self, player):
         """Detects collisions between the monster and the player. Returns
@@ -425,8 +434,8 @@ class Charger(Monster):
         player : obj        - the player character object
         """
         
-        if (self.x < -100 or self.x > LEVEL_W + 100 or 
-            self.y < -100 or self.y > LEVEL_H + 100):
+        if (self.x_pos < -100 or self.x_pos > LEVEL_W + 100 or 
+            self.y_pos < -100 or self.y_pos > LEVEL_H + 100):
             self.remove()
         super(Monster, self).update(player)
 
