@@ -14,7 +14,7 @@ class Game():
         offset_y = max(0, min(LEVEL_H - HEIGHT, self.player.y_pos - HEIGHT / 2))
 
         screen.blit("pitch", (-offset_x, -offset_y))
-        self.player._surf = transform.scale(self.player._surf, (300,300))
+        #self.player._surf = transform.scale(self.player._surf, (300,300))
         self.player.draw(offset_x, offset_y)
 
 
