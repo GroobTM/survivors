@@ -1,6 +1,3 @@
-from pgzero.builtins import keyboard
-
-
 WIDTH = 800
 HEIGHT = 480
 HALF_WINDOW_W = WIDTH / 2
@@ -15,11 +12,12 @@ HALF_LEVEL_H = LEVEL_H // 2
 PLAYER_W = 20
 PLAYER_H = 25
 
+# Animation
+MAX_ANIMATION_FRAMES = 4
+FRAME_TIME = 20
+HURT_DURATION = 2
+HURT_COOLDOWN = 10
 
-
-
-
-#---------------------
-MAX_ANIMATION_FRAMES = 4 # Used in game_actors.py
-FRAME_TIME = 20 # Used in game_actors.py
-SPAWN_RATE = 20 # Used in game.py
+# Spawning
+SPAWN_RATE = 20 
+SPAWN_DISTANCE = 50

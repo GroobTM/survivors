@@ -8,15 +8,10 @@ __version__ = "0.1"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W, \
-                      PLAYER_H, PLAYER_W
+from constants import *
 from numpy import hypot
 from time import time
 from random import randint
-
-HURT_DURATION = 2
-HURT_COOLDOWN = 10
-SPAWN_DISTANCE = 50
 
 
 def normalise(dx, dy):
