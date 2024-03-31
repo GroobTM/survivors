@@ -66,7 +66,8 @@ class Base_Actor(Actor):
     Methods
     -------
     hurt(damage)        - Reduces the creatures health by "damage" and sets the 
-                          number of hurt frames to "HURT_DURATION".
+                          number of hurt frames to "HURT_DURATION". If health is
+                          reduced to 0, sets "alive" to False.
     collision(player) : bool    - Placeholder to be overwritten by children.
     move(player)        - Moves the creature by (dx, dy)*speed incrementally and
                           runs sets "alive" to False if "collision" returns 
@@ -112,7 +113,8 @@ class Base_Actor(Actor):
     
     def hurt(self, damage):
         """Reduces the creatures health by "damage" and sets "img_hurt_frame" 
-        to "HURT_DURATION".
+        to "HURT_DURATION". If health is reduced to 0 or less, set "alive" to 
+        False.
 
         Parameters
         ----------
