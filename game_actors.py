@@ -12,9 +12,11 @@ from constants import MAX_ANIMATION_FRAMES, FRAME_TIME, LEVEL_H, LEVEL_W, \
                       PLAYER_H, PLAYER_W
 from numpy import hypot
 from time import time
+from random import randint
 
 HURT_DURATION = 2
 HURT_COOLDOWN = 10
+SPAWN_DISTANCE = 50
 
 
 def normalise(dx, dy):
@@ -29,6 +31,7 @@ def normalise(dx, dy):
     ------
     (float, float)      - normalised vector
     """
+
     hyp = hypot(dx, dy)
     if hyp != 0:
         return [dx, dy] / hyp
@@ -46,6 +49,7 @@ class Base_Actor(Actor):
     img_frame : str     - the current frame of animation
     img_dir : str       - the sub directory of the image (optional)
     img_hurt_frame : int    - how long the image has been in the hurt state
+    img_frame_counter : int - how long the image has been in the current frame
     image : str         - combination of above attributes
     speed : int         - speed of creature
     health : int        - health of creature
@@ -53,6 +57,8 @@ class Base_Actor(Actor):
     y_pos : int         - y coordinate of creature
     dx : float          - x component of creature movement
     dy : float          - y component of creature movement
+    alive : bool        - if the mob is alive
+
 
     "image" Explained
     -----------------
@@ -66,11 +72,10 @@ class Base_Actor(Actor):
     -------
     hurt(damage)        - Reduces the creatures health by "damage" and sets the 
                           number of hurt frames to "HURT_DURATION".
-    check_dead()        - Checks if the creatures health is 0 and runs "remove".
     collision(player) : bool    - Placeholder to be overwritten by children.
-    remove()            - Deletes the creature.
     move(player)        - Moves the creature by (dx, dy)*speed incrementally and
-                          runs "remove" if "collision" returns True.
+                          runs sets "alive" to False if "collision" returns 
+                          True.
     update(player)      - Runs every game update. Works out the next animation 
                           frame and updates it. Runs "move".
     draw(offset_x, offset_y)    - Calculates where to draw creature. Then, calls
@@ -108,6 +113,7 @@ class Base_Actor(Actor):
         self.dy = 0
         self.img_hurt_frame = 0
         self.img_frame_counter = 0
+        self.alive = True
     
     def hurt(self, damage):
         """Reduces the creatures health by "damage" and sets "img_hurt_frame" 
@@ -120,34 +126,25 @@ class Base_Actor(Actor):
 
         self.health -= damage
         self.img_hurt_frame = HURT_DURATION
-
-    def check_dead(self):
-        """Checks if the creatures health is 0 and runs "remove"."""
         if self.health <= 0:
-            ##### Death event
-            self.remove()
+            self.alive = False
 
     def collision(self, player):
         """Placeholder to be overwritten by children. Returns False."""
         return False
 
-    def remove(self):
-        """Deletes the creature."""
-
-        del self
-
     def move(self, player):
         """Moves the creature by (dx, dy)*speed incrementally. Each increment 
-        run "collision" and if True is returned, run "remove".
+        run "collision" and if True is returned, sets "alive" to False.
 
         Parameters
         ----------
         player : obj        - the player character object
         """
 
-        for i in self.speed():
+        for i in range(self.speed):
             if self.collision(player):
-                self.remove()
+                self.alive = False
             self.x_pos += self.dx
             self.y_pos += self.dy
 
@@ -180,7 +177,6 @@ class Base_Actor(Actor):
             self.img_hurt_frame -= 1
         
         self.move(player)
-        self.check_dead()
 
     def draw(self, offset_x, offset_y):
         """Calculates where to draw creature. Then, calls parent "draw".
@@ -205,7 +201,6 @@ class Player(Base_Actor):
     move(player)        - Moves the player by (dx, dy)*speed incrementally and
                           checks that the player is not moving out of the levels
                           bounds.
-    check_dead()        - Special player is dead case. (TODO)
     movement_direction()
     update()
     """
@@ -242,12 +237,6 @@ class Player(Base_Actor):
             self.y_pos += self.dy
             self.y_pos = max(0 + PLAYER_H, min(self.y_pos, LEVEL_H - PLAYER_H))
             
-
-    def check_dead(self):
-        """Special player is dead case."""
-        if self.health <= 0:
-            print("Dead")
-
     def movement_direction(self):
         """Calculates the players movement direction based on keyboard inputs
         and normalises dx and dy.
@@ -299,14 +288,13 @@ class Monster(Base_Actor):
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, x, y, speed, health, damage, img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, img_dir=""):
         """Constructs the Monster class.
 
         Parameters
         ----------
         img : str           - image name (without frame number or direction)
-        x : int             - starting x coordinate of monster
-        y : int             - starting y coordinate of monster
+        screen_coords : (int, int, int, int) - coordinates of the screen
         speed : int         - speed of monster
         health : int        - health of monster
         damage : int        - damage dealt by monster
@@ -314,8 +302,33 @@ class Monster(Base_Actor):
         """
 
         self.damage = damage
-        super().__init__(img, x, y, speed, health, img_dir)
+        spawn_coords = self.calculate_spawn_coords(screen_coords)
+        super().__init__(img, spawn_coords[0], spawn_coords[1], speed, health, img_dir)
 
+    def calculate_spawn_coords(self, screen_coords):
+
+        LEFT = 0
+        TOP = 1
+        RIGHT = 2
+        BOTTOM = 3
+
+        side = randint(0,3)    
+        
+        if (side == LEFT):
+            posx = max(screen_coords[LEFT] - SPAWN_DISTANCE, 0)
+            posy = randint(screen_coords[TOP],screen_coords[BOTTOM])      
+        elif (side == TOP): 
+            posx = randint(screen_coords[LEFT],screen_coords[RIGHT])
+            posy = max(screen_coords[TOP] - SPAWN_DISTANCE, 0)
+        elif (side == RIGHT): 
+            posx = min(screen_coords[RIGHT] + SPAWN_DISTANCE, LEVEL_W)
+            posy = randint(screen_coords[TOP],screen_coords[BOTTOM])
+        elif (side == BOTTOM):
+            posx = randint(screen_coords[LEFT],screen_coords[RIGHT])
+            posy = min(screen_coords[BOTTOM] + SPAWN_DISTANCE, LEVEL_H)
+        
+        return (posx, posy)
+    
     def calculate_direction(self, player):
         """Runs "normalise" on the difference between the players (x, y) and the
         monsters (x, y) to calculate the direction of the player character.
@@ -377,23 +390,22 @@ class Charger(Monster):
     collision(player) : bool    - Dectects collisions between the charger and 
                           the player character and runs "hurt" if its attack is
                           not on cooldown.
-    update(player)      - Runs every game update. Runs "remove" if the charger
-                          runs off the edge of the level. Then runs parents 
-                          "update".
+    update(player)      - Runs every game update. Sets "alive" to False if the 
+                          charger runs off the edge of the level. Then runs  
+                          parents "update".
     
     Parent
     ------
     """
     __doc__ += super.__doc__
 
-    def __init__(self, img, x, y, speed, health, damage, player, img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, player, img_dir=""):
         """Constructs the Charger class.
         
         Parameters
         ----------
         img : str           - image name (without frame number or direction)
-        x : int             - starting x coordinate of monster
-        y : int             - starting y coordinate of monster
+        screen_coords : (int, int, int, int) - coordinates of the screen
         speed : int         - speed of monster
         health : int        - health of monster
         damage : int        - damage dealt by monster
@@ -402,7 +414,7 @@ class Charger(Monster):
         """
 
         self.cooldown_start = -1.0
-        super().__init__(img, x, y, speed, health, damage, img_dir)
+        super().__init__(img, screen_coords, speed, health, damage, img_dir)
         self.dx, self.dy = self.calculate_direction(player)
     
     def collision(self, player):
@@ -428,8 +440,8 @@ class Charger(Monster):
         return False
     
     def update(self, player):
-        """Runs every game update. Runs "remove" if the charger runs off the 
-        edge of the level. Then runs parents "update".
+        """Runs every game update. Sets "alive" to False if the charger runs off
+        the edge of the level. Then runs parents "update".
 
         Parameters
         ----------
@@ -438,6 +450,6 @@ class Charger(Monster):
         
         if (self.x_pos < -100 or self.x_pos > LEVEL_W + 100 or 
             self.y_pos < -100 or self.y_pos > LEVEL_H + 100):
-            self.remove()
+            self.alive = False
         super(Monster, self).update(player)
 

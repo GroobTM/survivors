@@ -22,3 +22,4 @@ PLAYER_H = 25
 #---------------------
 MAX_ANIMATION_FRAMES = 4 # Used in game_actors.py
 FRAME_TIME = 20 # Used in game_actors.py
+SPAWN_RATE = 20 # Used in game.py
