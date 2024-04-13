@@ -5,7 +5,7 @@ in the game window. (Weapon is refers to bullets and slashes rather than guns
 and swords.)
 """
 
-__version__ = "0.1"
+__version__ = "0.2"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor
@@ -54,7 +54,6 @@ class Weapon(Actor):
                           and mobs.
     check_duration()    - Checks how long the weapon has been around and removes
                           it if its life exceeds the weapons duration.
-    remove()            - Deletes the weapon.
     movement_calc(player_pos) : [int, int]  - Calculates how far the player has 
                           moved since the last update.
     move()              - Moves the weapon by (dx,dy)*speed and runs 
@@ -77,7 +76,7 @@ class Weapon(Actor):
         pierce : int        - number of mobs the weapon can penetrate (optional)
         """
 
-        super.__init__(img, player_pos)
+        super().__init__(img, player_pos)
         self.damage = damage
         self.duration = duration
         self.x_pos, self.y_pos = player_pos
@@ -87,6 +86,7 @@ class Weapon(Actor):
 
         self.spawn_time = time()
         self.player_pos_old = player_pos
+        self.exists = True
         
     def collision(self, mob_list):
         """Detects collisions between the weapon and mobs. Causes damage to mobs
@@ -104,7 +104,7 @@ class Weapon(Actor):
             if self.pierce != -1:
                 self.pierce -= 1
                 if self.pierce == 0:
-                    self.remove()
+                    self.exists = False
     
     def check_duration(self):
         """Checks how long the weapon has existed and calls "remove" if it life 
@@ -112,12 +112,7 @@ class Weapon(Actor):
         """
 
         if time() - self.spawn_time >= self.duration:
-            self.remove()
-
-    def remove(self):
-        """Deletes the weapon."""
-
-        del self
+            self.exists = False
 
     def movement_calc(self, player_pos):
         """Calculates how far the player has moved since the last update.
@@ -132,8 +127,8 @@ class Weapon(Actor):
                           current position
         """
 
-        move = [player_pos.pos[0] - self.player_pos_old[0],
-                player_pos.pos[1] - self.player_pos_old[1]]
+        move = [player_pos[0] - self.player_pos_old[0],
+                player_pos[1] - self.player_pos_old[1]]
         self.player_pos_old = player_pos
         return move
     
@@ -202,10 +197,10 @@ class Projectile(Weapon):
         super().__init__(img, damage, duration, dx, dy, player_pos, pierce)
         self.speed = speed
 
-    def update(self):
+    def update(self, mob_list):
         """Runs every game update. Runs "move" and "check_duration"."""
 
-        self.move(self.dx, self.dy, self.speed)
+        self.move(self.dx, self.dy, self.speed, mob_list)
         self.check_duration()
 
 
@@ -244,7 +239,7 @@ class Stab(Projectile):
         super().__init__(img, damage, duration, dx, dy, player_pos, speed, 
                          pierce)
     
-    def update(self, player_pos):
+    def update(self, player, mob_list):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs parents 
         "update".
@@ -254,9 +249,9 @@ class Stab(Projectile):
         player_pos : (float, float) - the current position of the player
         """
 
-        player_movement = self.movement_calc(player_pos)
-        self.move(player_movement[0], player_movement[1], 1)
-        super().update()
+        player_movement = self.movement_calc(player.pos)
+        self.move(player_movement[0], player_movement[1], 1, mob_list)
+        super().update(mob_list)
 
 
 class Aura(Weapon):
@@ -297,7 +292,7 @@ class Aura(Weapon):
         self.last_activation = time() - interval # Forces attck on first update
         super().__init__(img, damage, duration, 0, 0, player_pos, -1)
     
-    def move(self, dx, dy):
+    def move(self, dx, dy, mob_list):
         """Moves the weapon by (dx,dy) and runs "collision" if the time since
         the aura last activated exceded the interval.
         """
@@ -308,7 +303,7 @@ class Aura(Weapon):
             self.collision(mob_list)
             self.last_activation = time()
     
-    def update(self, player_pos):
+    def update(self, player_pos, mob_list):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs 
         "check_duration".
@@ -319,7 +314,7 @@ class Aura(Weapon):
         """
 
         player_movement = self.movement_calc(player_pos)
-        self.move(player_movement[0], player_movement[1])
+        self.move(player_movement[0], player_movement[1], mob_list)
         self.check_duration()
 
 
@@ -379,7 +374,7 @@ class Orbital(Weapon):
         self.x_pos = radius*cos(radians(starting_angle))
         self.y_pos = radius*sin(radians(starting_angle))
 
-    def rotate(self):
+    def rotate(self, mob_list):
         """Moves the orbital its "angular_speed" over incremental steps and runs
         "collision" at each step. The number of steps is dictated by "speed".
         """
@@ -399,7 +394,7 @@ class Orbital(Weapon):
             (self.speed > 0 and self.max_rotation > self.cur_angle)):
             self.remove()
 
-    def update(self, player_pos):
+    def update(self, player_pos, mob_list):
         """Runs every game update. Runs "movement_calc" to calculate the players
         movement and applies this movement with "move". Then runs "rotate", 
         "rotate_limit", and "check_duration".
@@ -410,6 +405,6 @@ class Orbital(Weapon):
         """
         player_movement = self.movement_calc(player_pos)
         self.move(player_movement[0], player_movement[1], 1)
-        self.rotate()
+        self.rotate(mob_list)
         self.rotate_limit()
         self.check_duration()
