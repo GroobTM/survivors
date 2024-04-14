@@ -10,6 +10,7 @@ from pygame import transform
 from game_actors import Player, Monster
 from constants import *
 from time import time
+from attack_new import Aimed_Attack
 
 
 class Game():
@@ -49,9 +50,10 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("dragon_boss", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "dragon_boss")
+        self.player = Player("bat", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "bat")
         self.mobs = mobs
         self.monster_alive = []
+        self.attacks = []
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
@@ -106,6 +108,12 @@ class Game():
                                                       row["health"],
                                                       row["damage"],
                                                       row["dir"]))
+            self.attacks.append(Aimed_Attack("xp1", self.player, self.monster_alive, 1, 1, 5.0, homing=True))
+        
+        for attack in self.attacks:
+            if not attack.exists:
+                self.attacks.remove(attack)
+            attack.update(self.monster_alive)
         for monster in self.monster_alive:
             if not monster.alive:
                 self.monster_alive.remove(monster)
@@ -124,3 +132,5 @@ class Game():
         self.player.draw(offset_x, offset_y)
         for monster in self.monster_alive:
             monster.draw(offset_x, offset_y)
+        for attack in self.attacks:
+            attack.draw(offset_x, offset_y)
