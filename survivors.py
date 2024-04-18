@@ -28,7 +28,7 @@ You have version {0}. Please upgrade using the command 'pip3 install\
     sys.exit()
 
 # Loads mob data from "mobs.csv"
-with open("mobs.csv", "r") as file:
+with open("values/mobs.csv", "r") as file:
     reader = DictReader(file)
     mobs = []
     for row in reader:

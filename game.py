@@ -10,7 +10,8 @@ from pygame import transform
 from game_actors import Player, Monster
 from constants import *
 from time import time
-from attack_new import Aimed_Attack
+from weapons import Thrown_Dagger, Arrow, Magic_Missile
+
 
 
 class Game():
@@ -52,8 +53,8 @@ class Game():
 
         self.player = Player("bat", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "bat")
         self.mobs = mobs
-        self.monster_alive = []
-        self.attacks = []
+        self.monsters_alive = []
+        self.weapons = [Thrown_Dagger(), Arrow(), Magic_Missile()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
@@ -102,22 +103,19 @@ class Game():
                 if (self.current_minute in row["spawn_time"] 
                     and not (row["has_spawned"] and row["unique"])):
                     self.mobs[index]["has_spawned"] = True
-                    self.monster_alive.append(Monster(row["img"],
+                    self.monsters_alive.append(Monster(row["img"],
                                                       self.screen_coords(),
                                                       row["speed"],
                                                       row["health"],
                                                       row["damage"],
                                                       row["dir"]))
-            self.attacks.append(Aimed_Attack("xp1", self.player, self.monster_alive, 1, 1, 5.0, homing=True))
         
-        for attack in self.attacks:
-            if not attack.exists:
-                self.attacks.remove(attack)
-            attack.update(self.monster_alive)
-        for monster in self.monster_alive:
+        for monster in self.monsters_alive:
             if not monster.alive:
-                self.monster_alive.remove(monster)
+                self.monsters_alive.remove(monster)
             monster.update(self.player)
+        for weapon in self.weapons:
+            weapon.update(self.player, self.monsters_alive)
 
 
     def draw(self, screen):
@@ -130,7 +128,7 @@ class Game():
 
         screen.blit("pitch", (-offset_x, -offset_y))
         self.player.draw(offset_x, offset_y)
-        for monster in self.monster_alive:
+        for monster in self.monsters_alive:
             monster.draw(offset_x, offset_y)
-        for attack in self.attacks:
-            attack.draw(offset_x, offset_y)
+        for weapon in self.weapons:
+            weapon.draw(offset_x, offset_y)

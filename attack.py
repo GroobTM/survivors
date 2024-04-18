@@ -155,7 +155,7 @@ class Aimed_Attack(Attack):
     Parent
     ------
     """
-    __doc__ += super.__doc__
+    __doc__ += Attack.__doc__
 
     def __init__(self, img, player, mob_list, speed, damage, duration, 
                  pierce=-1, homing=False):
