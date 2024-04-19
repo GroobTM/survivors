@@ -2,7 +2,7 @@ from pgzero.builtins import Actor
 from time import time
 from random import randint
 from numpy import hypot
-from constants import WIDTH
+from constants import WIDTH, ATTACK_IMMUNE
 from game_actors import normalise
 
 class Attack(Actor):
@@ -26,6 +26,9 @@ class Attack(Actor):
                           removed
     spawn_time : float  - when the attack was created
     exists : bool       - marks the object for removal
+    immune_counter : int    - how long the attack should be prevented from
+                          dealing damage to the last monster hit
+    last_hit : obj      - the last monster hit by the attack
 
     Methods
     -------
@@ -68,23 +71,30 @@ class Attack(Actor):
 
         self.spawn_time = time()
         self.exists = True
+        self.immune_counter = 0
+        self.last_hit = None
         
     def collision(self, mob_list):
         """Detects collisions between the attack and mobs. When a collision is
         detected, cause damage to that mob and reduce the pierce counter. If
-        pierce reaches 0, mark the attack for removal.
+        pierce reaches 0, mark the attack for removal. Prevents collisions if
+        the weapon has damaged the same monster too recently.
 
         Parameters
         ----------
         mob_list : [obj, ...]   - list of all currently alive mobs
         """
 
+        
         collision_index = self.collidelist(mob_list)
         if collision_index != -1:
-            mob_list[collision_index].hurt(self.damage)
-            self.pierce -= 1
-            if self.pierce == 0:
-                self.exists = False
+            if self.last_hit != mob_list[collision_index] or self.immune_counter == 0:
+                mob_list[collision_index].hurt(self.damage)
+                self.last_hit = mob_list[collision_index]
+                self.immune_counter = ATTACK_IMMUNE
+                self.pierce -= 1
+                if self.pierce == 0:
+                    self.exists = False
 
     def check_duration(self):
         """Checks how long the attack has existed and marks it for removal if
@@ -115,7 +125,8 @@ class Attack(Actor):
         ----------
         mob_list : [obj, ...]   - list of all currently alive mobs 
         """
-
+        if self.immune_counter > 0:
+            self.immune_counter -= 1
         self.move(mob_list)
         self.check_duration()
 
