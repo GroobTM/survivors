@@ -1,5 +1,6 @@
-from attack import Attack, Aimed_Attack
 from csv import DictReader
+from time import time
+from attack import Attack, Aimed_Attack
 from constants import ATTACK_DELAY
 
 class Weapon():
@@ -105,7 +106,7 @@ class Weapon():
         self.duration = float(self.progression[self.level]["duration"])
         self.pierce = int(self.progression[self.level]["pierce"])
         self.quantity = int(self.progression[self.level]["quantity"])
-        self.frequency = int(self.progression[self.level]["frequency"])
+        self.frequency = float(self.progression[self.level]["frequency"])
 
     def level_up_weapon(self):
         """Increases the weapons level and calls "set_weapoon_stats" to update 
