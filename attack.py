@@ -88,7 +88,8 @@ class Attack(Actor):
         
         collision_index = self.collidelist(mob_list)
         if collision_index != -1:
-            if self.last_hit != mob_list[collision_index] or self.immune_counter == 0:
+            if (self.last_hit != mob_list[collision_index] or 
+                self.immune_counter == 0):
                 mob_list[collision_index].hurt(self.damage)
                 self.last_hit = mob_list[collision_index]
                 self.immune_counter = ATTACK_IMMUNE

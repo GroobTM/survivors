@@ -54,7 +54,7 @@ class Game():
         self.player = Player("bat", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "bat")
         self.mobs = mobs
         self.monsters_alive = []
-        self.weapons = [Thrown_Dagger(), Arrow()]
+        self.weapons = [Thrown_Dagger(), Arrow(), Magic_Missile()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0

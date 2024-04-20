@@ -40,9 +40,11 @@ class Weapon():
                               "set_weapoon_stats" to update the weapons stats
                               for the new level.
     spawn_attack(player, mob_list)  - Dummy method.
-    update(player, mob_list)    - Runs every game update. Decreases the timer by
-                              1. As the timer approaches 0, "spawn_attack" is 
-                              run a number of times equal to quantity.
+    update(player, mob_list)    - Runs every game update. Checks the difference
+                              between the current time and the start of the 
+                              weapons attack cycle. If this difference exceeds 
+                              the current "attack_interval" spawn an attack and 
+                              increments "attack_interval_index".
                               Also runs the update methods of all objects in 
                               "attacks" and removes objects that no longer 
                               exist.
@@ -69,10 +71,18 @@ class Weapon():
         self.level = 1
         self.level_cap = len(self.progression)
         self.max_level = False
-        self.timer = 0
+        self.starting_time = time()
+        self.delay = ATTACK_DELAY
+        self.attack_interval = []
+        self.attack_interval_index = 0
         self.attacks = []
 
         self.set_weapon_stats()
+        
+        
+        for i in range(self.quantity):
+            self.attack_interval.append(self.delay)
+        self.attack_interval.append(round(self.frequency - self.delay * self.quantity, 3))
 
     def load_progression(self, file_name):
         """Loads and returns progression stats from a csv file.
@@ -132,10 +142,12 @@ class Weapon():
         pass
 
     def update(self, player, mob_list):
-        """Runs every game update. Decreases the timer by 1. As the timer 
-        approaches 0, "spawn_attack" is run a number of times equal to quantity
-        at intervals equal to "ATTACK_DELAY".
-
+        """Runs every game update. Checks the difference between the current
+        time and the start of the weapons attack cycle. If this difference
+        exceeds the current "attack_interval" spawn an attack and increments
+        "attack_interval_index". When "attack_interval_index" reaches the end
+        of "attack_interval", "attack_interval_index" cycle is reset to 0.
+        
         Also runs the update methods of all objects in "attacks" and removes 
         objects that no longer exist.
 
@@ -144,21 +156,17 @@ class Weapon():
         player : obj            - the player object
         mob_list : [obj,...]    - a list of monsters that currently exist
         """
-        
-        if self.timer == 0:
-            self.timer = self.frequency
-        else:
-            self.timer -= 1
 
-        if (self.timer < self.quantity * ATTACK_DELAY and 
-            self.timer % ATTACK_DELAY == 0):
-            # Staggers attack spawning. 
-            # Example:
-            # If quantity = 3 and ATTACK_DELAY = 2, attacks will spawn when 
-            # timer reaches 4, 2, and 0.
-            
-            self.spawn_attack(player, mob_list)
-        
+        if (time() - self.starting_time >= 
+            self.attack_interval[self.attack_interval_index]):
+            self.attack_interval_index += 1
+            self.starting_time = time()
+
+            if self.attack_interval_index < len(self.attack_interval):
+                self.spawn_attack(player, mob_list)
+            else:
+                self.attack_interval_index = 0
+
         for attack in self.attacks:
             if not attack.exists:
                 self.attacks.remove(attack)
