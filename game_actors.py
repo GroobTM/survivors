@@ -201,7 +201,7 @@ class Player(Base_Actor):
     movement_direction()
     update()
     """
-    __doc__ += super.__doc__
+    __doc__ += Base_Actor.__doc__
 
     def __init__(self, img, x, y, speed, health, img_dir=""):
         """Constructs the Player class.
@@ -283,7 +283,7 @@ class Monster(Base_Actor):
     Parent
     ------
     """
-    __doc__ += super.__doc__
+    __doc__ += Base_Actor.__doc__
 
     def __init__(self, img, screen_coords, speed, health, damage, img_dir=""):
         """Constructs the Monster class.
@@ -300,7 +300,8 @@ class Monster(Base_Actor):
 
         self.damage = damage
         spawn_coords = self.calculate_spawn_coords(screen_coords)
-        super().__init__(img, spawn_coords[0], spawn_coords[1], speed, health, img_dir)
+        super().__init__(img, spawn_coords[0], spawn_coords[1], speed, health, 
+                         img_dir)
 
     def calculate_spawn_coords(self, screen_coords):
 
@@ -394,9 +395,10 @@ class Charger(Monster):
     Parent
     ------
     """
-    __doc__ += super.__doc__
+    __doc__ += Monster.__doc__
 
-    def __init__(self, img, screen_coords, speed, health, damage, player, img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, player, 
+                 img_dir=""):
         """Constructs the Charger class.
         
         Parameters

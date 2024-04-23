@@ -1,410 +1,243 @@
-"""Weapon Attack Framework
-
-This module creates the framework for weapon attacks as they appear and behave
-in the game window. (Weapon is refers to bullets and slashes rather than guns 
-and swords.)
-"""
-
-__version__ = "0.2"
-__author__ = "Reuben Wiles Maguire"
-
 from pgzero.builtins import Actor
 from time import time
-from numpy import radians, sin, cos
+from random import randint
+from numpy import hypot
+from constants import WIDTH, ATTACK_IMMUNE
+from game_actors import normalise
 
-
-def sign(num):
-    """Converts a number into its corresponding sign (-1, 0, 1).
-
-    Parameters
-    ----------
-    num : int/float     - a number
-
-    Return
-    ------
-    int                 - -1, 0, or 1
-    """
-    if num < 0:
-        num = -1
-    elif num > 0:
-        num = 1
-    else:
-        num = 0
-    return num
-
-class Weapon(Actor):
-    """A class to outline the basic properties of a weapon.
+class Attack(Actor):
+    """A class that describes the properties of a basic attack.
+    
+    The attack described travels in a straight line in the direction of the
+    player's movement when the attack was created (randomly if player is not
+    moving).
 
     Attributes
     ----------
     img : str           - name of a png file in ./images used for sprite
-    x_pos : int         - x coordinate of the sprite
-    y_pos : int         - y coordinate of the sprite
-    damage : int        - amount of damage dealt by the weapon
-    duration : float    - amount of time the weapon exists for
-    dx : float          - x component of unit vector
-    dy : float          - y component of unit vector
-    pierce : int        - number of mobs the weapon can penetrate
-    spawn_time : float  - time at which the weapon was spawned
-    player_pos_old      - position of the player last update
+    x_pos : int         - x coordinate of the attack
+    y_pos : int         - y coordinate of the attack
+    dx : float          - x vector of movement
+    dy : float          - y vector of movement
+    speed : int         - speed of movement
+    damage : int        - damage of the attack
+    duration : float    - how long the attack lasts before it is removed
+    pierce : int        - how many enemies the attack can pierce before it is
+                          removed
+    spawn_time : float  - when the attack was created
+    exists : bool       - marks the object for removal
+    immune_counter : int    - how long the attack should be prevented from
+                          dealing damage to the last monster hit
+    last_hit : obj      - the last monster hit by the attack
 
     Methods
     -------
-    collision(mob_list) - Detects and handles collisions between the weapon
-                          and mobs.
-    check_duration()    - Checks how long the weapon has been around and removes
-                          it if its life exceeds the weapons duration.
-    movement_calc(player_pos) : [int, int]  - Calculates how far the player has 
-                          moved since the last update.
-    move()              - Moves the weapon by (dx,dy)*speed and runs 
-                          "collision".
-    draw(offset_x, offset_y)    - Calculates where to draw the weapon. Then,
-                          calls parent "draw".
+    collision(mob_list) - Detects collisions between the attack and mobs.
+    check_duration()    - Checks how long the attack has existed and marks it
+                          for removal if necessary.
+    move(mob_list)      - Moves the attack incrementally and runs "collision".
+    update(mob_list)    - Runs every game update. Runs "move" and 
+                          "check_duration".
+    draw(offset_x, offset_y)    - Adjusts the attacks position based on the
+                          position of the screen and runs parent "draw".
     """
 
-    def __init__(self, img, damage, duration, dx, dy, player_pos, pierce = -1):
-        """Constructs all attributes for the Weapon class.
+    def __init__(self, img, player, speed, damage, duration, pierce=-1):
+        """Constructs the Attack class.
 
         Parameters
         ----------
         img : str           - name of a png file in ./images used for sprite
-        damage : int        - amount of damage dealt by the weapon
-        duration : float    - amount of time the weapon exists for
-        dx : float          - x component of unit vector
-        dy : float          - y component of unit vector
-        player_pos : (float, float) - the current position of the player
-        pierce : int        - number of mobs the weapon can penetrate (optional)
+        player : obj        - the player character object
+        speed : int         - speed of movement
+        damage : int        - damage of the attack
+        duration : float    - how long the attack lasts before it is removed
+        pierce : int        - how many enemies the attack can pierce before it
+                              is removed (-1 means infinite)
         """
 
-        super().__init__(img, player_pos)
+        super().__init__(img, (player.x_pos, player.y_pos))
+        self.x_pos = player.x_pos
+        self.y_pos = player.y_pos
+        self.dx = player.dx
+        self.dy = player.dy
+        # Prevents stationary attacks
+        while self.dx == 0 and self.dy == 0:
+            self.dx, self.dy = normalise(randint(-1, 1), randint(-1, 1))
+        self.speed = speed
         self.damage = damage
         self.duration = duration
-        self.x_pos, self.y_pos = player_pos
-        self.dx = dx
-        self.dy = dy
-        self.pierce = pierce # -1 means infinite
+        self.pierce = pierce
 
         self.spawn_time = time()
-        self.player_pos_old = player_pos
         self.exists = True
+        self.immune_counter = 0
+        self.last_hit = None
         
     def collision(self, mob_list):
-        """Detects collisions between the weapon and mobs. Causes damage to mobs
-        it collides with. Reduces pierce if applicable and calls "remove" if 
-        pierce reaches 0.
+        """Detects collisions between the attack and mobs. When a collision is
+        detected, cause damage to that mob and reduce the pierce counter. If
+        pierce reaches 0, mark the attack for removal. Prevents collisions if
+        the weapon has damaged the same monster too recently.
 
         Parameters
         ----------
-        mob_list : [obj]    - list of mobs currently alive
+        mob_list : [obj, ...]   - list of all currently alive mobs
         """
 
+        
         collision_index = self.collidelist(mob_list)
         if collision_index != -1:
-            mob_list[collision_index].hurt(self.damage)
-            if self.pierce != -1:
+            if (self.last_hit != mob_list[collision_index] or 
+                self.immune_counter == 0):
+                mob_list[collision_index].hurt(self.damage)
+                self.last_hit = mob_list[collision_index]
+                self.immune_counter = ATTACK_IMMUNE
                 self.pierce -= 1
                 if self.pierce == 0:
                     self.exists = False
-    
+
     def check_duration(self):
-        """Checks how long the weapon has existed and calls "remove" if it life 
-        excedes the duration.
+        """Checks how long the attack has existed and marks it for removal if
+        the time it has existed for excedes the attacks duration.
         """
 
         if time() - self.spawn_time >= self.duration:
             self.exists = False
 
-    def movement_calc(self, player_pos):
-        """Calculates how far the player has moved since the last update.
+    def move(self, mob_list):
+        """Moves the attack incrementally by (dx, dy)*speed and runs "collision"
+        at each increment.
 
         Parameters
         ----------
-        player_pos : (float, float) - the current position of the player
-
-        Return
-        ------
-        [x, y] : [int, int] - difference between players last position and
-                          current position
+        mob_list : [obj, ...]   - list of all currently alive mobs
         """
 
-        move = [player_pos[0] - self.player_pos_old[0],
-                player_pos[1] - self.player_pos_old[1]]
-        self.player_pos_old = player_pos
-        return move
-    
-    def move(self, dx, dy, speed, mob_list):
-        """Moves the weapon by (dx,dy)*speed incrementally and runs 
-        "collision" at each increment.
-
-        Parameters
-        ----------
-        dx
-        """
-
-        for i in range(speed):
-            self.x_pos += dx
-            self.y_pos += dy
+        for i in range(self.speed):
+            self.x_pos += self.dx
+            self.y_pos += self.dy
             self.collision(mob_list)
 
-    def draw(self, offset_x, offset_y):
-        """Calculates where to draw the weapon. Then, calls parent "draw".
-        
+    def update(self, mob_list):
+        """Runs every game update. Runs "move" and "check_duration".
+
         Parameters
         ----------
-        offset_x : float    - difference between real and virtual x position
-        offset_y : float    - difference between real and virtual y position
+        mob_list : [obj, ...]   - list of all currently alive mobs 
+        """
+        if self.immune_counter > 0:
+            self.immune_counter -= 1
+        self.move(mob_list)
+        self.check_duration()
+
+    def draw(self, offset_x, offset_y):
+        """Adjusts the attacks position based on the position of the screen and 
+        runs parent "draw".
+
+        Parameters
+        ----------
+        offset_x : int      - offset for the screens real and virtual x position
+        offset_y : int      - offset for the screens real and virtual y position
         """
 
         self.pos = (self.x_pos - offset_x, self.y_pos - offset_y)
         super().draw()
-        
 
-class Projectile(Weapon):
-    """A class that describes weapons that move in a straight line.
 
-    Child of "Weapon"
+class Aimed_Attack(Attack):
+    """A class that describes attacks that are aimed at the closest monster.
+    These attacks can be homing causing them to seek out their target.
+
+    Child of Attack
 
     Attributes
     ----------
-    speed : int         - speed of the projectile
+    homing : bool       - whether the attack is homing or not
+    target : obj        - the attacks current target
 
     Methods
     -------
-    update()            - Runs every game update. Runs "move" and 
-                          "check_duration".
+    find_closest(mob_list)  - Finds the mob closest to the object and sets it as
+                          the target.
+    calc_direction(mob_list)    - Calculates the direction of the target mob.
+    update(mob_list)    - Runs every game update. If the attack is homing runs
+                          "calc_direction". Runs parents update.
     
     Parent
     ------
     """
-    __doc__ += super.__doc__
+    __doc__ += Attack.__doc__
 
-    def __init__(self, img, damage, duration, dx, dy, player_pos, speed, pierce=-1):
-        """Constructs all attributes for the Projectile class.
+    def __init__(self, img, player, mob_list, speed, damage, duration, 
+                 pierce=-1, homing=False):
+        """Constructs the Aimed_Attack class.
 
         Parameters
         ----------
         img : str           - name of a png file in ./images used for sprite
-        damage : int        - amount of damage dealt by the projectile
-        duration : float    - amount of time the projectile exists for
-        dx : float          - x component of unit vector
-        dy : float          - y component of unit vector
-        player_pos : (float, float) - the current position of the player
-        speed : int         - speed of the projectile
-        pierce : int        - number of mobs the projectile can penetrate 
-                              (optional)
+        player : obj        - the player character object
+        mob_list : [obj, ...]   - list of all currently alive mobs
+        speed : int         - speed of movement
+        damage : int        - damage of the attack
+        duration : float    - how long the attack lasts before it is removed
+        pierce : int        - how many enemies the attack can pierce before it
+                              is removed (-1 means infinite)
+        homing : bool       - if the attack is aimed or not
         """
 
-        super().__init__(img, damage, duration, dx, dy, player_pos, pierce)
-        self.speed = speed
+        super().__init__(img, player, speed, damage, duration, pierce)
+        self.homing = homing
+        
+        self.target = None
+        self.calc_direction(mob_list)
+
+    def find_closest(self, mob_list):
+        """Finds the mob closest to the object and sets it as the target.
+
+        Parameters
+        ----------
+        mob_list : [obj, ...]   - list of all currently alive mobs
+        """
+
+        distance = WIDTH
+        for mob in mob_list:
+            new_distance = hypot(mob.x_pos - self.x_pos, mob.y_pos - self.y_pos)
+            if new_distance < distance:
+                distance = new_distance
+                self.target = mob
+
+    def calc_direction(self, mob_list):
+        """Calculates the direction of the target mob and sets dx and dy 
+        accordingly. If the target has not been set, runs "find_closest".
+        If there is no available target, set dx and dy randomly.
+
+        Parameters
+        ----------
+        mob_list : [obj, ...]   - list of all currently alive mobs
+        """
+
+        if self.target not in mob_list:
+            self.find_closest(mob_list)
+        
+        if self.target == None:
+            while self.dx == 0 and self.dy == 0:
+                self.dx, self.dy = normalise(randint(-1, 1), randint(-1, 1))
+        else:
+            x_difference = self.target.x_pos - self.x_pos
+            y_difference = self.target.y_pos - self.y_pos
+
+            self.dx, self.dy = normalise(x_difference, y_difference)
 
     def update(self, mob_list):
-        """Runs every game update. Runs "move" and "check_duration"."""
-
-        self.move(self.dx, self.dy, self.speed, mob_list)
-        self.check_duration()
-
-
-class Stab(Projectile):
-    """A class that describes projectiles that continually spawn from the player
-    character.
-
-    Child of "Projectile"
-
-    Methods
-    -------
-    update(player_pos)  - Runs every game update. Runs "movement_calc" and
-                          offsets x and y. Then runs parents "update".
-    
-    Parent
-    ------
-    """
-    __doc__ += super.__doc__
-
-    def __init__(self, img, damage, duration, dx, dy, player_pos, speed, 
-                 pierce=-1):
-        """Constructs all attributes for the Stab class.
+        """Runs every game update. If the attack is homing runs 
+        "calc_direction". Then, runs parents update.
 
         Parameters
         ----------
-        img : str           - name of a png file in ./images used for sprite
-        damage : int        - amount of damage dealt by the stab
-        duration : float    - amount of time the stab exists for
-        dx : float          - x component of unit vector
-        dy : float          - y component of unit vector
-        player_pos : (float, float) - the current position of the player
-        speed : int         - speed of the stab
-        pierce : int        - number of mobs the stab can penetrate (optional)
+        mob_list : [obj, ...]   - list of all currently alive mobs
         """
+        if self.homing:
+            self.calc_direction(mob_list)
 
-        super().__init__(img, damage, duration, dx, dy, player_pos, speed, 
-                         pierce)
-    
-    def update(self, player, mob_list):
-        """Runs every game update. Runs "movement_calc" to calculate the players
-        movement and applies this movement with "move". Then runs parents 
-        "update".
-
-        Parameters
-        ----------
-        player_pos : (float, float) - the current position of the player
-        """
-
-        player_movement = self.movement_calc(player.pos)
-        self.move(player_movement[0], player_movement[1], 1, mob_list)
         super().update(mob_list)
-
-
-class Aura(Weapon):
-    """A class that describes auras that constantly follow the player.
-
-    Child of "Weapon"
-
-    Attributes
-    ----------
-    interval : float    - amount of time between aura activations
-
-    Methods
-    -------
-    move()              - Moves the weapon by (dx,dy) and runs "collision" if
-                          the time since the aura last activated exceded the 
-                          interval.
-    update(player_pos)  - Runs every game update. Runs "movement_calc", "move",
-                          and "check_duration".
-
-    Parent
-    ------
-    """
-    __doc__ += super.__doc__
-
-    def __init__(self, img, damage, duration, player_pos, interval):
-        """Constructs all attributes for the Aura class.
-
-        Parameters
-        ----------
-        img : str           - name of a png file in ./images used for sprite
-        damage : int        - amount of damage dealt by the aura
-        duration : float    - amount of time the aura exists for
-        player_pos : (float, float) - the current position of the player
-        interval : float    - amount of time between aura activations
-        """
-
-        self.interval = interval
-        self.last_activation = time() - interval # Forces attck on first update
-        super().__init__(img, damage, duration, 0, 0, player_pos, -1)
-    
-    def move(self, dx, dy, mob_list):
-        """Moves the weapon by (dx,dy) and runs "collision" if the time since
-        the aura last activated exceded the interval.
-        """
-
-        self.x_pos += dx
-        self.y_pos += dy
-        if time() - self.last_activation >= self.interval:
-            self.collision(mob_list)
-            self.last_activation = time()
-    
-    def update(self, player_pos, mob_list):
-        """Runs every game update. Runs "movement_calc" to calculate the players
-        movement and applies this movement with "move". Then runs 
-        "check_duration".
-
-        Parameters
-        ----------
-        player_pos : (float, float) - the current position of the player
-        """
-
-        player_movement = self.movement_calc(player_pos)
-        self.move(player_movement[0], player_movement[1], mob_list)
-        self.check_duration()
-
-
-class Orbital(Weapon):
-    """A class that describes orbitals that rotate around the player chracter.
-
-    Child of Weapon
-
-    Attributes
-    ----------
-    radius : int        - radius of the orbital
-    speed  : int        - linear speed of the orbital
-    angular_speed : float   - angular speed of the orbital
-    cur_angle : float   - current angle of the orbital
-    max_rotation : int  - max angle the orbital can rotate to
-    starting_angle : int    - the starting angle of the orbital
-
-    Methods
-    -------
-    rotate()            - Moves the orbital its "angular_speed" over incremental
-                          steps and runs "collision" at each step.
-    rotate_limit()      - Checks if the orbital has exceeded its "max_rotation"
-                          and runs "remove" if it has.
-    update(player_pos)  - Runs every game update. Runs "movement_calc", "move",
-                          "rotate", "rotate_limit" and "check_duration".
-
-    Parent
-    ------
-    """
-    __doc__ += super.__doc__
-
-    def __init__(self, img, damage, duration, player_pos, radius, speed, max_rotation,
-                 starting_angle = 0):
-        """Constructs all attributes for the Orbital class.
-
-        Parameters
-        ----------
-        img : str           - name of a png file in ./images used for sprite
-        damage : int        - amount of damage dealt by the orbital
-        duration : float    - amount of time the orbital exists for
-        player_pos : (float, float) - the current position of the player
-        radius : int        - radius of the orbital
-        speed : int         - linear speed of the orbital
-        max_rotation : int  - max angle the orbital can rotate to
-        starting_angle : int    - the starting angle of the orbital (optional)
-        """
-
-        self.radius = radius
-        self.speed = speed
-        self.angular_speed = speed / radius
-        self.max_rotation = max_rotation * sign(speed) + starting_angle
-        self.cur_angle = starting_angle
-        super().__init__(img, damage, duration, 0, 0, player_pos -1)
-
-        # Attack does not originate from the player so a new starting position
-        # needs to be set.
-        self.x_pos = radius*cos(radians(starting_angle))
-        self.y_pos = radius*sin(radians(starting_angle))
-
-    def rotate(self, mob_list):
-        """Moves the orbital its "angular_speed" over incremental steps and runs
-        "collision" at each step. The number of steps is dictated by "speed".
-        """
-
-        angle_step = self.angular_speed/self.speed
-        for i in range(self.speed):
-            self.cur_angle += angle_step
-            self.x_pos = self.radius*cos(radians(self.cur_angle))
-            self.y_pos = self.radius*sin(radians(self.cur_angle))
-            self.collision(mob_list)
-
-    def rotate_limit(self):
-        """Checks if the orbital has exceeded its "max_rotation" and runs 
-        "remove" if it has.
-        """
-        if ((self.speed < 0 and self.max_rotation < self.cur_angle) or 
-            (self.speed > 0 and self.max_rotation > self.cur_angle)):
-            self.remove()
-
-    def update(self, player_pos, mob_list):
-        """Runs every game update. Runs "movement_calc" to calculate the players
-        movement and applies this movement with "move". Then runs "rotate", 
-        "rotate_limit", and "check_duration".
-
-        Parameters
-        ----------
-        player_pos : (float, float) - the current position of the player
-        """
-        player_movement = self.movement_calc(player_pos)
-        self.move(player_movement[0], player_movement[1], 1)
-        self.rotate(mob_list)
-        self.rotate_limit()
-        self.check_duration()
