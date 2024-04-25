@@ -261,6 +261,11 @@ class Player(Base_Actor):
         self.movement_direction()
         super().update(self)
 
+        if self.dx == 0 and self.dy == 0:
+            self.image = f"{self.img_dir}{self.img_base}_idle"
+
+        
+
 
 class Monster(Base_Actor):
     """A class that describes basic monsters.
