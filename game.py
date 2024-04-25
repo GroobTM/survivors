@@ -51,10 +51,10 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("bat", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "bat")
+        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "princess")
         self.mobs = mobs
         self.monsters_alive = []
-        self.weapons = [Thrown_Dagger(), Arrow(), Magic_Missile()]
+        self.weapons = [Magic_Missile(), Thrown_Dagger()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
@@ -126,7 +126,7 @@ class Game():
         offset_x = max(0, min(LEVEL_W - WIDTH, self.player.x_pos - WIDTH / 2))
         offset_y = max(0, min(LEVEL_H - HEIGHT, self.player.y_pos - HEIGHT / 2))
 
-        screen.blit("pitch", (-offset_x, -offset_y))
+        screen.blit("background", (-offset_x, -offset_y))
         self.player.draw(offset_x, offset_y)
         for monster in self.monsters_alive:
             monster.draw(offset_x, offset_y)

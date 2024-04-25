@@ -1,8 +1,8 @@
 from pgzero.builtins import Actor
 from time import time
 from random import randint
-from numpy import hypot
-from constants import WIDTH, ATTACK_IMMUNE
+from numpy import hypot, arctan2, degrees
+from constants import WIDTH, ATTACK_IMMUNE, FRAME_TIME, MAX_ANIMATION_FRAMES
 from game_actors import normalise
 
 class Attack(Actor):
@@ -14,7 +14,10 @@ class Attack(Actor):
 
     Attributes
     ----------
-    img : str           - name of a png file in ./images used for sprite
+    img_base : str      - name of a png file used for the sprite
+    img_dir : str       - directory of the png file used for the sprite
+    img_frame : int     - current frame of the sprite animation
+    img_frame_counter : int - how long the image has been in the current frame
     x_pos : int         - x coordinate of the attack
     y_pos : int         - y coordinate of the attack
     dx : float          - x vector of movement
@@ -36,27 +39,36 @@ class Attack(Actor):
     check_duration()    - Checks how long the attack has existed and marks it
                           for removal if necessary.
     move(mob_list)      - Moves the attack incrementally and runs "collision".
-    update(mob_list)    - Runs every game update. Runs "move" and 
-                          "check_duration".
+    update(mob_list)    - Runs every game update. Advances the sprites animation
+                          and sets its rotaion to match its current direction. 
+                          Runs "move" and "check_duration".
     draw(offset_x, offset_y)    - Adjusts the attacks position based on the
                           position of the screen and runs parent "draw".
     """
 
-    def __init__(self, img, player, speed, damage, duration, pierce=-1):
+    def __init__(self, img, player, speed, damage, duration, pierce=-1, 
+                 img_dir=""):
         """Constructs the Attack class.
 
         Parameters
         ----------
-        img : str           - name of a png file in ./images used for sprite
+        img : str           - name of a png file used for the sprite
         player : obj        - the player character object
         speed : int         - speed of movement
         damage : int        - damage of the attack
         duration : float    - how long the attack lasts before it is removed
         pierce : int        - how many enemies the attack can pierce before it
                               is removed (-1 means infinite)
+        img_dir : str       - directory of the png file used for the sprite
         """
+        self.img_base = img
+        self.img_dir = img_dir
+        self.img_frame = 1
+        if img_dir != "":
+            self.img_dir += "\\"
+        cur_img = f"{self.img_dir}{self.img_base}{self.img_frame}"
 
-        super().__init__(img, (player.x_pos, player.y_pos))
+        super().__init__(cur_img, (player.x_pos, player.y_pos))
         self.x_pos = player.x_pos
         self.y_pos = player.y_pos
         self.dx = player.dx
@@ -73,6 +85,7 @@ class Attack(Actor):
         self.exists = True
         self.immune_counter = 0
         self.last_hit = None
+        self.img_frame_counter = 0
         
     def collision(self, mob_list):
         """Detects collisions between the attack and mobs. When a collision is
@@ -120,12 +133,24 @@ class Attack(Actor):
             self.collision(mob_list)
 
     def update(self, mob_list):
-        """Runs every game update. Runs "move" and "check_duration".
+        """Runs every game update. Advances the sprites animation and sets its 
+        rotaion to match its current direction. Runs "move" and 
+        "check_duration".
 
         Parameters
         ----------
         mob_list : [obj, ...]   - list of all currently alive mobs 
         """
+        self.img_frame_counter += 1
+        if self.img_frame_counter > FRAME_TIME:
+            self.img_frame_counter = 0
+            self.img_frame += 1
+        if self.img_frame > MAX_ANIMATION_FRAMES:
+            self.img_frame = 1
+        
+        self.image = f"{self.img_dir}{self.img_base}{self.img_frame}"
+        self.angle = -degrees(arctan2(self.dy, self.dx)) % 360
+
         if self.immune_counter > 0:
             self.immune_counter -= 1
         self.move(mob_list)
@@ -170,12 +195,12 @@ class Aimed_Attack(Attack):
     __doc__ += Attack.__doc__
 
     def __init__(self, img, player, mob_list, speed, damage, duration, 
-                 pierce=-1, homing=False):
+                 pierce=-1, homing=False, img_dir=""):
         """Constructs the Aimed_Attack class.
 
         Parameters
         ----------
-        img : str           - name of a png file in ./images used for sprite
+        img : str           - name of a png file used for the sprite
         player : obj        - the player character object
         mob_list : [obj, ...]   - list of all currently alive mobs
         speed : int         - speed of movement
@@ -184,9 +209,10 @@ class Aimed_Attack(Attack):
         pierce : int        - how many enemies the attack can pierce before it
                               is removed (-1 means infinite)
         homing : bool       - if the attack is aimed or not
+        img_dir : str       - directory of the png file used for the sprite
         """
 
-        super().__init__(img, player, speed, damage, duration, pierce)
+        super().__init__(img, player, speed, damage, duration, pierce, img_dir)
         self.homing = homing
         
         self.target = None
