@@ -28,6 +28,8 @@ class Game():
     current_minute : int    - number of minutes that have passed since the game
                               started.
     timer : int         - amount of game updates since the last monster spawned
+    xp : int            - current player xp
+    xp_cap : int        - xp required to level up
 
     Methods
     -------
@@ -59,6 +61,8 @@ class Game():
         self.current_time = 0.0
         self.current_minute = 0
         self.timer = 0
+        self.xp = 0
+        self.xp_cap = 100
 
     def screen_coords(self):
         """Calculates the coordinates of the edge of the screen.
@@ -132,3 +136,13 @@ class Game():
             monster.draw(offset_x, offset_y)
         for weapon in self.weapons:
             weapon.draw(offset_x, offset_y)
+        
+        xp_offset = (1 - self.xp / self.xp_cap) * WIDTH
+        screen.blit("gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
+
+        hp_offset = (1 - self.player.health / self.player.max_health) * WIDTH
+        screen.blit("gui_health_bar", (-hp_offset + BAR_BORDER, 
+                                       HEIGHT - BAR_HEIGHT + BAR_BORDER))
+
+        screen.blit("gui_box", (0, 0))
+        screen.blit("gui_box", (0, HEIGHT - BAR_HEIGHT))

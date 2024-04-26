@@ -193,6 +193,10 @@ class Player(Base_Actor):
 
     Child of Base_Actor
 
+    Attributes
+    ----------
+    max_health : int    - max health of the player
+
     Methods
     -------
     move(player)        - Moves the player by (dx, dy)*speed incrementally and
@@ -217,6 +221,7 @@ class Player(Base_Actor):
         """
 
         super().__init__(img, x, y, speed, health, img_dir)
+        self.max_health = health
     
     def move(self, player):
         """Moves the player by (dx, dy)*speed incrementally. Each increment 
