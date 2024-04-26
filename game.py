@@ -63,6 +63,7 @@ class Game():
         self.timer = 0
         self.xp = 0
         self.xp_cap = 100
+        self.level = 1
 
     def screen_coords(self):
         """Calculates the coordinates of the edge of the screen.
@@ -146,3 +147,33 @@ class Game():
 
         screen.blit("gui_box", (0, 0))
         screen.blit("gui_box", (0, HEIGHT - BAR_HEIGHT))
+
+        if self.level >= 10:
+            tens, digits = list(str(self.level))
+        else:
+            tens, digits = ["0", str(self.level)]
+        screen.blit("numbers\\"+tens, (HALF_WINDOW_W - HALF_NUMBER_GAP - 
+                                   NUMBER_WIDTH, 0))
+        screen.blit("numbers\\"+digits, (HALF_WINDOW_W + HALF_NUMBER_GAP, 0))
+
+        minutes, seconds = divmod(int(self.current_time), 60)
+        if seconds >= 10:
+            sec_tens, sec_digits = list(str(seconds))#
+        else:
+            sec_tens, sec_digits = ["0", str(seconds)]
+            
+        if minutes >= 10:
+            min_tens, min_digits = list(str(minutes))
+        else:
+            min_tens, min_digits = ["0", str(minutes)]
+        screen.blit("numbers\\"+sec_digits+"_black", (WIDTH - TIMER_SEPARATION, 
+                                         NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\"+sec_tens+"_black", (WIDTH - 2 * TIMER_SEPARATION, 
+                                         NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\colon_black", (WIDTH - 3 * TIMER_SEPARATION, 
+                                         NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\"+min_digits+"_black", (WIDTH - 4 * TIMER_SEPARATION, 
+                                         NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\"+min_tens+"_black", (WIDTH - 5 * TIMER_SEPARATION, 
+                                         NUMBER_HEIGHT + NUMBER_GAP))
+        
