@@ -53,7 +53,8 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "princess")
+        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 
+                             5, 100, "princess")
         self.mobs = mobs
         self.monsters_alive = []
         self.weapons = [Magic_Missile(), Thrown_Dagger()]
@@ -138,15 +139,16 @@ class Game():
         for weapon in self.weapons:
             weapon.draw(offset_x, offset_y)
         
+        # GUI
         xp_offset = (1 - self.xp / self.xp_cap) * WIDTH
-        screen.blit("gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
+        screen.blit("gui\\gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
 
         hp_offset = (1 - self.player.health / self.player.max_health) * WIDTH
-        screen.blit("gui_health_bar", (-hp_offset + BAR_BORDER, 
+        screen.blit("gui\\gui_health_bar", (-hp_offset + BAR_BORDER, 
                                        HEIGHT - BAR_HEIGHT + BAR_BORDER))
 
-        screen.blit("gui_box", (0, 0))
-        screen.blit("gui_box", (0, HEIGHT - BAR_HEIGHT))
+        screen.blit("gui\\gui_box", (0, 0))
+        screen.blit("gui\\gui_box", (0, HEIGHT - BAR_HEIGHT))
 
         if self.level >= 10:
             tens, digits = list(str(self.level))
@@ -158,7 +160,7 @@ class Game():
 
         minutes, seconds = divmod(int(self.current_time), 60)
         if seconds >= 10:
-            sec_tens, sec_digits = list(str(seconds))#
+            sec_tens, sec_digits = list(str(seconds))
         else:
             sec_tens, sec_digits = ["0", str(seconds)]
             
@@ -166,14 +168,14 @@ class Game():
             min_tens, min_digits = list(str(minutes))
         else:
             min_tens, min_digits = ["0", str(minutes)]
-        screen.blit("numbers\\"+sec_digits+"_black", (WIDTH - TIMER_SEPARATION, 
-                                         NUMBER_HEIGHT + NUMBER_GAP))
-        screen.blit("numbers\\"+sec_tens+"_black", (WIDTH - 2 * TIMER_SEPARATION, 
-                                         NUMBER_HEIGHT + NUMBER_GAP))
-        screen.blit("numbers\\colon_black", (WIDTH - 3 * TIMER_SEPARATION, 
-                                         NUMBER_HEIGHT + NUMBER_GAP))
-        screen.blit("numbers\\"+min_digits+"_black", (WIDTH - 4 * TIMER_SEPARATION, 
-                                         NUMBER_HEIGHT + NUMBER_GAP))
-        screen.blit("numbers\\"+min_tens+"_black", (WIDTH - 5 * TIMER_SEPARATION, 
-                                         NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{sec_digits}_black", 
+                    (WIDTH - TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{sec_tens}_black", 
+                    (WIDTH - 2 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\colon_black", 
+                    (WIDTH - 3 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{min_digits}_black",
+                    (WIDTH - 4 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{min_tens}_black", 
+                    (WIDTH - 5 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
         

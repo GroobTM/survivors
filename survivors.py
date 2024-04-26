@@ -8,6 +8,8 @@ __version__ = "0.2"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 import pgzero, pgzrun, pygame
+from pgzero.builtins import keyboard, keys
+from time import time
 import math, sys, random
 from enum import Enum
 from game import Game
@@ -27,6 +29,36 @@ You have version {0}. Please upgrade using the command 'pip3 install\
 --upgrade pgzero'".format(pgzero.__version__))
     sys.exit()
 
+class State(Enum):
+    MENU = 1
+    PLAY = 2
+    GAME_OVER = 3
+
+def update():
+    global state, game, mobs
+
+    if state == State.MENU and keyboard.space:
+        state = State.PLAY
+        game.game_start_time = time()
+
+    elif state == State.PLAY:
+        if game.player.health <= 0:
+            state = State.GAME_OVER
+        else:
+            game.update()
+    
+    elif state == State.GAME_OVER:
+        if keyboard.space:
+            state = State.MENU
+            game = Game(mobs)
+def draw():
+    if state == State.MENU:
+        pass
+    elif state == State.PLAY:
+        game.draw(screen)
+    elif state == State.GAME_OVER:
+        pass
+
 # Loads mob data from "mobs.csv"
 with open("values/mobs.csv", "r") as file:
     reader = DictReader(file)
@@ -44,13 +76,6 @@ with open("values/mobs.csv", "r") as file:
         mobs[row]["has_spawned"] = bool(int(mobs[row]["has_spawned"]))
         mobs[row]["unique"] = bool(int(mobs[row]["unique"]))
 
-def update():
-    game.update()
-
-def draw():
-    game.draw(screen)
-
-
-
+state = State.MENU
 game = Game(mobs)
 pgzrun.go()
