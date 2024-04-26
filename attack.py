@@ -1,3 +1,11 @@
+"""Attack Framework
+
+This module creates the framework for attacks as they appear and behave in the 
+game window.
+"""
+
+__version__ = "0.4"
+__author__ = "Reuben Wiles Maguire"
 from pgzero.builtins import Actor
 from time import time
 from random import randint

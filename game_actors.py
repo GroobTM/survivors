@@ -4,7 +4,7 @@ This module creates the framework for different types of monster enemies and
 the framework for the player character (including controls).
 """
 
-__version__ = "0.1"
+__version__ = "0.2"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys

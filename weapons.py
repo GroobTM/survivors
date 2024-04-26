@@ -1,3 +1,11 @@
+"""Weapon Framework
+
+This module defines the weapon class which handles the loading of the stats of 
+weapons and the spawning of attacks.
+"""
+__version__ = "0.3"
+__author__ = "Reuben Wiles Maguire"
+
 from csv import DictReader
 from time import time
 from random import choice

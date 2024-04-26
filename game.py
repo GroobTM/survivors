@@ -1,9 +1,9 @@
-"""Game Class
+"""Game
 
 This module defines the Game class. This class combines all other classes into
 one place and describes how they communicate with each other.
 """
-__version__ = "0.2"
+__version__ = "0.6"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
