@@ -35,17 +35,24 @@ class State(Enum):
     MENU = 1
     PLAY = 2
     GAME_OVER = 3
+    PAUSE = 4
+    LEVEL_UP = 5
 
 def update():
     """Runs every game cycle. Checks the state of the game and either:
     - waits for the player to press space to start the game. (MENU)
-    - runs the "update" method for "game" and check if the player is dead. 
-      (PLAY)
+    - runs the "update" method for "game" and check if the player character is
+      dead or if the player has paused the game and records the time of the 
+      pause. (PLAY)
     - waits for the player to press space to create a new game object. 
       (GAME_OVER)
+    - waits for the player to press space to resume the game and calculates how
+      long the game has been paused, then applies this offset to the game timer.
+      (PAUSE)
+    - TODO (LEVEL_UP)
     """
 
-    global state, game, mobs
+    global state, game, mobs, time_paused
 
     if state == State.MENU and keyboard.space:
         state = State.PLAY
@@ -54,6 +61,12 @@ def update():
     elif state == State.PLAY:
         if game.player.health <= 0:
             state = State.GAME_OVER
+
+        elif keyboard.escape:
+            time_paused = time()
+            state = State.PAUSE
+            game.update()
+
         else:
             game.update()
     
@@ -62,11 +75,22 @@ def update():
             state = State.MENU
             game = Game(mobs)
 
+    elif state == State.PAUSE:
+        if keyboard.space:
+            time_diff = time() - time_paused
+            game.game_start_time += time_diff
+            state = State.PLAY
+
+    elif state == State.LEVEL_UP:
+        pass
+
 def draw():
     """Runs every game cycle. Checks the state of the game and either:
     - shows the main menu. (MENU)
     - runs the "draw" function of "game". (PLAY)
     - shows the game over screen. (GAME_OVER)
+    - shows the pause menu. (PAUSE)
+    - shows the level up menu. (LEVEL_UP)
     """
 
     if state == State.MENU:
@@ -74,6 +98,10 @@ def draw():
     elif state == State.PLAY:
         game.draw(screen)
     elif state == State.GAME_OVER:
+        pass
+    elif state == State.PAUSE:
+        pass
+    elif state == State.LEVEL_UP:
         pass
 
 # Loads mob data from "mobs.csv"
