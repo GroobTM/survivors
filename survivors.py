@@ -4,7 +4,7 @@ This module loads the mob data and creates the "Game" object. Finally it starts
 the game.
 """
 
-__version__ = "0.2"
+__version__ = "0.3"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 import pgzero, pgzrun, pygame
@@ -30,11 +30,21 @@ You have version {0}. Please upgrade using the command 'pip3 install\
     sys.exit()
 
 class State(Enum):
+    """Enum used to track the state of the game."""
+
     MENU = 1
     PLAY = 2
     GAME_OVER = 3
 
 def update():
+    """Runs every game cycle. Checks the state of the game and either:
+    - waits for the player to press space to start the game. (MENU)
+    - runs the "update" method for "game" and check if the player is dead. 
+      (PLAY)
+    - waits for the player to press space to create a new game object. 
+      (GAME_OVER)
+    """
+
     global state, game, mobs
 
     if state == State.MENU and keyboard.space:
@@ -51,7 +61,14 @@ def update():
         if keyboard.space:
             state = State.MENU
             game = Game(mobs)
+
 def draw():
+    """Runs every game cycle. Checks the state of the game and either:
+    - shows the main menu. (MENU)
+    - runs the "draw" function of "game". (PLAY)
+    - shows the game over screen. (GAME_OVER)
+    """
+
     if state == State.MENU:
         pass
     elif state == State.PLAY:
