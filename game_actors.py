@@ -48,11 +48,13 @@ class Base_Actor(Actor):
     image : str         - combination of above attributes
     speed : int         - speed of creature
     health : int        - health of creature
-    x_pos : int         - x coordinate of creature
-    y_pos : int         - y coordinate of creature
+    x_pos : float       - x coordinate of creature
+    y_pos : float       - y coordinate of creature
     dx : float          - x component of creature movement
     dy : float          - y component of creature movement
     alive : bool        - if the mob is alive
+    damage_death : bool - if the mob was killed by damage and not a collision
+                          with the player
 
 
     "image" Explained
@@ -110,6 +112,7 @@ class Base_Actor(Actor):
         self.img_hurt_frame = 0
         self.img_frame_counter = 0
         self.alive = True
+        self.damage_death = False
     
     def hurt(self, damage):
         """Reduces the creatures health by "damage" and sets "img_hurt_frame" 
@@ -124,6 +127,7 @@ class Base_Actor(Actor):
         self.health -= damage
         self.img_hurt_frame = HURT_DURATION
         if self.health <= 0:
+            self.damage_death = True
             self.alive = False
 
     def collision(self, player):
@@ -280,6 +284,7 @@ class Monster(Base_Actor):
     Attributes
     ----------
     damage : int        - damage dealt by monster
+    xp_value : int      - the xp value of the monster
 
     Methods
     -------
@@ -295,7 +300,8 @@ class Monster(Base_Actor):
     """
     __doc__ += Base_Actor.__doc__
 
-    def __init__(self, img, screen_coords, speed, health, damage, img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, xp_value, 
+                 img_dir=""):
         """Constructs the Monster class.
 
         Parameters
@@ -305,9 +311,10 @@ class Monster(Base_Actor):
         speed : int         - speed of monster
         health : int        - health of monster
         damage : int        - damage dealt by monster
+        xp_value : int      - the xp value of the monster
         img_dir : str       - sub directory of image (optional)
         """
-
+        self.xp_value = xp_value
         self.damage = damage
         spawn_coords = self.calculate_spawn_coords(screen_coords)
         super().__init__(img, spawn_coords[0], spawn_coords[1], speed, health, 

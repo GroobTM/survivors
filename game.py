@@ -7,11 +7,12 @@ __version__ = "0.6"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
-from game_actors import Player, Monster
-from constants import *
 from time import time
+from random import randint
+from game_actors import Player, Monster
+from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
-
+from constants import *
 
 
 class Game():
@@ -57,6 +58,7 @@ class Game():
                              5, 100, "princess")
         self.mobs = mobs
         self.monsters_alive = []
+        self.collectables = []
         self.weapons = [Magic_Missile(), Thrown_Dagger()]
         self.game_start_time = time()
         self.current_time = 0.0
@@ -106,20 +108,27 @@ class Game():
         if self.timer == SPAWN_RATE:
             self.timer = 0
             for index, row in zip(range(len(self.mobs)), self.mobs):
-                if (self.current_minute in row["spawn_time"] 
-                    and not (row["has_spawned"] and row["unique"])):
-                    self.mobs[index]["has_spawned"] = True
+                if (self.current_minute in row["spawn_time"] ):
                     self.monsters_alive.append(Monster(row["img"],
                                                       self.screen_coords(),
                                                       row["speed"],
                                                       row["health"],
                                                       row["damage"],
+                                                      row["xp_value"],
                                                       row["dir"]))
         
         for monster in self.monsters_alive:
             if not monster.alive:
+                if monster.damage_death:
+                    self.collectables.append(XP(monster))
+                    if randint(1, 100) <= HEAL_SPAWN_CHANCE:
+                        self.collectables.append(Cake(monster))
                 self.monsters_alive.remove(monster)
             monster.update(self.player)
+        for collectable in self.collectables:
+            if not collectable.exists:
+                self.collectables.remove(collectable)
+            collectable.update(self)
         for weapon in self.weapons:
             weapon.update(self.player, self.monsters_alive)
 
@@ -134,6 +143,8 @@ class Game():
 
         screen.blit("background", (-offset_x, -offset_y))
         self.player.draw(offset_x, offset_y)
+        for collectable in self.collectables:
+            collectable.draw(offset_x, offset_y)
         for monster in self.monsters_alive:
             monster.draw(offset_x, offset_y)
         for weapon in self.weapons:

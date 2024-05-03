@@ -118,8 +118,7 @@ with open("values/mobs.csv", "r") as file:
         mobs[row]["damage"] = int(mobs[row]["damage"])
         mobs[row]["spawn_time"] = list(map(int,
                                            mobs[row]["spawn_time"].split("/")))
-        mobs[row]["has_spawned"] = bool(int(mobs[row]["has_spawned"]))
-        mobs[row]["unique"] = bool(int(mobs[row]["unique"]))
+        mobs[row]["xp_value"] = int(mobs[row]["xp_value"])
 
 state = State.MENU
 game = Game(mobs)
