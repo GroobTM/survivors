@@ -1,5 +1,14 @@
+"""Weapon Framework
+
+This module defines the weapon class which handles the loading of the stats of 
+weapons and the spawning of attacks.
+"""
+__version__ = "0.3"
+__author__ = "Reuben Wiles Maguire"
+
 from csv import DictReader
 from time import time
+from random import choice
 from attack import Attack, Aimed_Attack
 from constants import ATTACK_DELAY
 
@@ -195,8 +204,10 @@ class Thrown_Dagger(Weapon):
 
     Attributes
     ----------
-    img : str               - the name of an image file in ./images used for the
-                              weapons attack sprite
+    img : str               - name of a png file used for the weapons attack 
+                              sprite
+    img_dir : str           - directory of the png file used for the weapons 
+                              attack sprite
 
     Methods
     -------
@@ -214,14 +225,15 @@ class Thrown_Dagger(Weapon):
         name = "Thrown Dagger"
         icon = "xp1"
         progression = self.load_progression("thrown_dagger.csv")
-        self.img = "xp1"
+        self.img = "thrown_dagger_"
+        self.img_dir = "thrown_dagger"
         super().__init__(name, icon, progression)
 
     def spawn_attack(self, player, mob_list):
         """Adds an instance of the "Attack" class to "attacks"."""
 
         self.attacks.append(Attack(self.img, player, self.speed, self.damage, 
-                                   self.duration, self.pierce))
+                                   self.duration, self.pierce, self.img_dir))
         
 class Arrow(Weapon):
     """This class describes the Bow and Arrow weapon.
@@ -230,8 +242,10 @@ class Arrow(Weapon):
 
     Attributes
     ----------
-    img : str               - the name of an image file in ./images used for the
-                              weapons attack sprite
+    img : str               - name of a png file used for the weapons attack 
+                              sprite
+    img_dir : str           - directory of the png file used for the weapons 
+                              attack sprite
 
     Methods
     -------
@@ -250,6 +264,7 @@ class Arrow(Weapon):
         icon = "xp2"
         progression = self.load_progression("arrow.csv")
         self.img = "xp2"
+        self.img_dir = ""
         super().__init__(name, icon, progression)
 
     def spawn_attack(self, player, mob_list):
@@ -257,7 +272,7 @@ class Arrow(Weapon):
 
         self.attacks.append(Aimed_Attack(self.img, player, mob_list, self.speed,
                                          self.damage, self.duration, 
-                                         self.pierce))
+                                         self.pierce, self.img_dir))
         
 class Magic_Missile(Weapon):
     """This class describes the Magic Missile weapon.
@@ -269,8 +284,10 @@ class Magic_Missile(Weapon):
     progression : dict      - dictionary that describes how "speed", "damage",  
                               "duration", "pierce", "quantity", "frequency", and
                               "homing" change as the weapon levels up
-    img : str               - the name of an image file in ./images used for the
-                              weapons attack sprite
+    img : str               - name of a png file used for the weapons attack 
+                              sprite
+    img_dir : str           - directory of the png file used for the weapons 
+                              attack sprite
     homing : bool           - if the weapons attacks home in on monsters
 
     Methods
@@ -292,7 +309,8 @@ class Magic_Missile(Weapon):
         name = "Magic Missile"
         icon = "xp3"
         progression = self.load_progression("magic_missile.csv")
-        self.img = "xp3"
+        self.img = ["magic_missile_1", "magic_missile_2"]
+        self.img_dir = "magic_missile"
         super().__init__(name, icon, progression)
 
     def set_weapon_stats(self):
@@ -305,6 +323,7 @@ class Magic_Missile(Weapon):
     def spawn_attack(self, player, mob_list):
         """Adds an instance of the "Aimed_Attack" class to "attacks"."""
 
-        self.attacks.append(Aimed_Attack(self.img, player, mob_list, self.speed,
-                                         self.damage, self.duration, 
-                                         self.pierce, self.homing))
+        self.attacks.append(Aimed_Attack(choice(self.img), player, mob_list, 
+                                         self.speed, self.damage, self.duration,
+                                         self.pierce, self.homing, 
+                                         self.img_dir))

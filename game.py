@@ -1,9 +1,9 @@
-"""Game Class
+"""Game
 
 This module defines the Game class. This class combines all other classes into
 one place and describes how they communicate with each other.
 """
-__version__ = "0.2"
+__version__ = "0.6"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
@@ -28,6 +28,8 @@ class Game():
     current_minute : int    - number of minutes that have passed since the game
                               started.
     timer : int         - amount of game updates since the last monster spawned
+    xp : int            - current player xp
+    xp_cap : int        - xp required to level up
 
     Methods
     -------
@@ -51,14 +53,18 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("bat", HALF_LEVEL_W, HALF_LEVEL_H, 5, 100, "bat")
+        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 
+                             5, 100, "princess")
         self.mobs = mobs
         self.monsters_alive = []
-        self.weapons = [Thrown_Dagger(), Arrow(), Magic_Missile()]
+        self.weapons = [Magic_Missile(), Thrown_Dagger()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
         self.timer = 0
+        self.xp = 0
+        self.xp_cap = 100
+        self.level = 1
 
     def screen_coords(self):
         """Calculates the coordinates of the edge of the screen.
@@ -126,9 +132,50 @@ class Game():
         offset_x = max(0, min(LEVEL_W - WIDTH, self.player.x_pos - WIDTH / 2))
         offset_y = max(0, min(LEVEL_H - HEIGHT, self.player.y_pos - HEIGHT / 2))
 
-        screen.blit("pitch", (-offset_x, -offset_y))
+        screen.blit("background", (-offset_x, -offset_y))
         self.player.draw(offset_x, offset_y)
         for monster in self.monsters_alive:
             monster.draw(offset_x, offset_y)
         for weapon in self.weapons:
             weapon.draw(offset_x, offset_y)
+        
+        # GUI
+        xp_offset = (1 - self.xp / self.xp_cap) * WIDTH
+        screen.blit("gui\\gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
+
+        hp_offset = (1 - self.player.health / self.player.max_health) * WIDTH
+        screen.blit("gui\\gui_health_bar", (-hp_offset + BAR_BORDER, 
+                                       HEIGHT - BAR_HEIGHT + BAR_BORDER))
+
+        screen.blit("gui\\gui_box", (0, 0))
+        screen.blit("gui\\gui_box", (0, HEIGHT - BAR_HEIGHT))
+
+        if self.level >= 10:
+            tens, digits = list(str(self.level))
+        else:
+            tens, digits = ["0", str(self.level)]
+        screen.blit("numbers\\"+tens, (HALF_WINDOW_W - HALF_NUMBER_GAP - 
+                                   NUMBER_WIDTH, 0))
+        screen.blit("numbers\\"+digits, (HALF_WINDOW_W + HALF_NUMBER_GAP, 0))
+
+        minutes, seconds = divmod(int(self.current_time), 60)
+        if seconds >= 10:
+            sec_tens, sec_digits = list(str(seconds))
+        else:
+            sec_tens, sec_digits = ["0", str(seconds)]
+            
+        if minutes >= 10:
+            min_tens, min_digits = list(str(minutes))
+        else:
+            min_tens, min_digits = ["0", str(minutes)]
+        screen.blit(f"numbers\\{sec_digits}_black", 
+                    (WIDTH - TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{sec_tens}_black", 
+                    (WIDTH - 2 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit("numbers\\colon_black", 
+                    (WIDTH - 3 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{min_digits}_black",
+                    (WIDTH - 4 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        screen.blit(f"numbers\\{min_tens}_black", 
+                    (WIDTH - 5 * TIMER_SEPARATION, NUMBER_HEIGHT + NUMBER_GAP))
+        
