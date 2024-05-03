@@ -1,3 +1,3 @@
 name,img,dir,speed,health,damage,spawn_time,has_spawned,unique
 Bat,bat,bat,1,10,1,0/1/2/3/4/5,0,0
-Skelly,skelly,skelly,1,100,1,0/1,0,0
+Skelly,skelly,skelly,1,10,1,0/1,0,0
