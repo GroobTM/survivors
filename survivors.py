@@ -39,20 +39,37 @@ class State(Enum):
     LEVEL_UP = 5
 
 def update():
-    """Runs every game cycle. Checks the state of the game and either:
-    - waits for the player to press space to start the game. (MENU)
-    - runs the "update" method for "game" and check if the player character is
-      dead or if the player has paused the game and records the time of the 
-      pause. (PLAY)
-    - waits for the player to press space to create a new game object. 
-      (GAME_OVER)
-    - waits for the player to press space to resume the game and calculates how
-      long the game has been paused, then applies this offset to the game timer.
-      (PAUSE)
-    - TODO (LEVEL_UP)
+    """Runs every game cycle. Checks the state of the game and:
+    
+    MENU State
+    ----------
+    Waits for the player to press space to start the game. Sets the start time.
+
+    PLAY State
+    ----------
+    Checks if the player is alive and sets the state to GAME_OVER if the player
+    is dead.
+    Checks the players xp against the xp cap and levels them up if necessary.
+    When the player levels up, sets the state to LEVEL_UP and record the time.
+    Additionally, resets the players xp to 0 (plus overflow from last level) and
+    increases the xp cap.
+    
+    GAME_OVER State
+    ---------------
+    Waits for the player to press space to create a new game object and restart
+    the game. 
+
+    PAUSE State
+    -----------
+    Waits for the player to press space to resume the game and calculates how
+    long the game has been paused, then applies this offset to the game timer.
+
+    LEVEL_UP State
+    --------------
+    TODO
     """
 
-    global state, game, mobs, time_paused
+    global state, game, mobs, time_paused, level_up_menu_state
 
     if state == State.MENU and keyboard.space:
         state = State.PLAY
@@ -62,6 +79,15 @@ def update():
         if game.player.health <= 0:
             state = State.GAME_OVER
 
+        elif game.xp >= game.xp_cap:
+            game.xp -= game.xp_cap
+            game.xp_cap = round(game.xp_cap * LEVEL_CAP_MULTIPLIER)
+            game.level += 1
+            time_paused = time()
+            level_up_menu_state = 0
+            state = State.LEVEL_UP
+            game.update()
+
         elif keyboard.escape:
             time_paused = time()
             state = State.PAUSE
@@ -69,10 +95,10 @@ def update():
 
         else:
             game.update()
-    
+            
     elif state == State.GAME_OVER:
         if keyboard.space:
-            state = State.MENU
+            state = State.PLAY
             game = Game(mobs)
 
     elif state == State.PAUSE:
@@ -82,7 +108,10 @@ def update():
             state = State.PLAY
 
     elif state == State.LEVEL_UP:
-        pass
+        if keyboard.space:
+            time_diff = time() - time_paused
+            game.game_start_time += time_diff
+            state = State.PLAY
 
 def draw():
     """Runs every game cycle. Checks the state of the game and either:

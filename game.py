@@ -65,7 +65,7 @@ class Game():
         self.current_minute = 0
         self.timer = 0
         self.xp = 0
-        self.xp_cap = 100
+        self.xp_cap = LEVEL_CAP_BASE
         self.level = 1
 
     def screen_coords(self):
@@ -151,10 +151,11 @@ class Game():
             weapon.draw(offset_x, offset_y)
         
         # GUI
-        xp_offset = (1 - self.xp / self.xp_cap) * WIDTH
+        xp_offset = max(0, (1 - self.xp / self.xp_cap) * WIDTH)
         screen.blit("gui\\gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
 
-        hp_offset = (1 - self.player.health / self.player.max_health) * WIDTH
+        hp_offset = min((1 - self.player.health / self.player.max_health) * 
+                        WIDTH, WIDTH)
         screen.blit("gui\\gui_health_bar", (-hp_offset + BAR_BORDER, 
                                        HEIGHT - BAR_HEIGHT + BAR_BORDER))
 
