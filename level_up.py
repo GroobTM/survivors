@@ -72,5 +72,5 @@ class Level_Up():
                 self.option_chosen = self.shown_choices[self.current_selection]
 
     def draw(self):
-        print(self.shown_choices[self.current_selection])
-        print(self.option_chosen)
+        print(self.shown_choices[self.current_selection].name, 
+              self.shown_choices[self.current_selection].level)

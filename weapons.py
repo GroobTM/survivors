@@ -88,11 +88,6 @@ class Weapon():
 
         self.set_weapon_stats()
         
-        
-        for i in range(self.quantity):
-            self.attack_interval.append(self.delay)
-        self.attack_interval.append(round(self.frequency - self.delay * self.quantity, 3))
-
     def load_progression(self, file_name):
         """Loads and returns progression stats from a csv file.
 
@@ -126,6 +121,11 @@ class Weapon():
         self.pierce = int(self.progression[self.level]["pierce"])
         self.quantity = int(self.progression[self.level]["quantity"])
         self.frequency = float(self.progression[self.level]["frequency"])
+
+        for i in range(self.quantity):
+            self.attack_interval.append(self.delay)
+        self.attack_interval.append(round(self.frequency - 
+                                          self.delay * self.quantity, 3))
 
     def level_up_weapon(self):
         """Increases the weapons level and calls "set_weapoon_stats" to update 
