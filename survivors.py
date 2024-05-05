@@ -112,11 +112,12 @@ def update():
         if level_up.is_chosen():
             level_up_choice = level_up.get_choice()
             
-            for weapon in game.weapons:
-                if type(weapon) == type(level_up_choice):
-                    game.weapons.remove(weapon)
+            if level_up_choice != None:
+                for weapon in game.weapons:
+                    if type(weapon) == type(level_up_choice):
+                        game.weapons.remove(weapon)
             
-            game.weapons.append(level_up_choice)
+                game.weapons.append(level_up_choice)
 
             time_diff = time() - time_paused
             game.game_start_time += time_diff
