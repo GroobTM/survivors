@@ -25,7 +25,6 @@ class Level_Up():
         for current_weapon in self.current_weapons:
             for new_weapon in WEAPON_LIST:
                 if type(current_weapon) == type(new_weapon):
-                    print(new_weapon)
                     self.possible_choices.remove(new_weapon)
 
             if not current_weapon.max_level:
@@ -48,11 +47,12 @@ class Level_Up():
         return self.option_chosen
     
     def update(self):
-        if not self.chosen:
+        choice_count = len(self.shown_choices)
+        if not self.chosen and choice_count > 0:
             if (keyboard.up or keyboard.w) and not self.up_pressed:
                 self.up_pressed = True
                 if self.current_selection == 0:
-                    self.current_selection == LEVEL_UP_CHOICES_COUNT - 1
+                    self.current_selection = choice_count - 1
                 else:
                     self.current_selection -= 1
             elif not (keyboard.up or keyboard.w):
@@ -60,8 +60,8 @@ class Level_Up():
 
             if (keyboard.down or keyboard.s) and not self.down_pressed:
                 self.down_pressed = True
-                if self.current_selection == LEVEL_UP_CHOICES_COUNT - 1:
-                    self.current_selection == 0
+                if self.current_selection == choice_count - 1:
+                    self.current_selection = 0
                 else:
                     self.current_selection += 1
             elif not (keyboard.down or keyboard.s):
@@ -69,8 +69,11 @@ class Level_Up():
 
             if keyboard.space:
                 self.chosen = True
+                print("This", self.shown_choices, self.current_selection)
                 self.option_chosen = self.shown_choices[self.current_selection]
 
     def draw(self):
-        print(self.shown_choices[self.current_selection].name, 
-              self.shown_choices[self.current_selection].level)
+        if not self.chosen:
+            if len(self.shown_choices) > 0:
+                print(self.shown_choices[self.current_selection].name, 
+                    self.shown_choices[self.current_selection].level)

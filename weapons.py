@@ -264,7 +264,7 @@ class Arrow(Weapon):
         icon = "xp2"
         progression = self.load_progression("arrow.csv")
         self.img = "xp2"
-        self.img_dir = ""
+        self.img_dir = "arrow"
         super().__init__(name, icon, progression)
 
     def spawn_attack(self, player, mob_list):
@@ -272,7 +272,7 @@ class Arrow(Weapon):
 
         self.attacks.append(Aimed_Attack(self.img, player, mob_list, self.speed,
                                          self.damage, self.duration, 
-                                         self.pierce, self.img_dir))
+                                         self.pierce, img_dir=self.img_dir))
         
 class Magic_Missile(Weapon):
     """This class describes the Magic Missile weapon.
