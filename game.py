@@ -54,12 +54,12 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 
-                             5, 100, "princess")
+        self.player = Player(PLAYER_SPRITE, HALF_LEVEL_W, HALF_LEVEL_H, 
+                             PLAYER_SPEED, PLAYER_HEALTH, PLAYER_DIR)
         self.mobs = mobs
         self.monsters_alive = []
         self.collectables = []
-        self.weapons = [Magic_Missile(), Thrown_Dagger()]
+        self.weapons = [Thrown_Dagger()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0

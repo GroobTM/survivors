@@ -135,6 +135,7 @@ class XP(Base_Collectable):
 
         self.value = monster.xp_value
         img = "collectables\\xp"
+        img_length = len(img)
 
         # Select the correct XP level image based on the value.
         if self.value < 10:
@@ -143,6 +144,10 @@ class XP(Base_Collectable):
             img += "2"
         else:
             img += "3"
+        
+        # Fixes bug where sometimes somehow two numbers are added to the string
+        if len(img) != img_length + 1:
+            img = img[:img_length + 1]
         super().__init__(img, monster)
         
     def active_effect(self, game):

@@ -13,6 +13,7 @@ from time import time
 import math, sys, random
 from enum import Enum
 from game import Game
+from level_up import Level_Up
 from constants import *
 from csv import DictReader
 
@@ -69,7 +70,7 @@ def update():
     TODO
     """
 
-    global state, game, mobs, time_paused, level_up_menu_state
+    global state, game, level_up, mobs, time_paused
 
     if state == State.MENU and keyboard.space:
         state = State.PLAY
@@ -84,7 +85,7 @@ def update():
             game.xp_cap = round(game.xp_cap * LEVEL_CAP_MULTIPLIER)
             game.level += 1
             time_paused = time()
-            level_up_menu_state = 0
+            level_up = Level_Up(game.weapons)
             state = State.LEVEL_UP
             game.update()
 
@@ -108,10 +109,22 @@ def update():
             state = State.PLAY
 
     elif state == State.LEVEL_UP:
-        if keyboard.space:
+        if level_up.is_chosen():
+            level_up_choice = level_up.get_choice()
+            
+            for weapon in game.weapons:
+                if type(weapon) == type(level_up_choice):
+                    game.weapons.remove(weapon)
+            
+            game.weapons.append(level_up_choice)
+
             time_diff = time() - time_paused
             game.game_start_time += time_diff
             state = State.PLAY
+        
+        else:
+            level_up.update()
+            
 
 def draw():
     """Runs every game cycle. Checks the state of the game and either:
@@ -131,7 +144,7 @@ def draw():
     elif state == State.PAUSE:
         pass
     elif state == State.LEVEL_UP:
-        pass
+        level_up.draw()
 
 # Loads mob data from "mobs.csv"
 with open("values/mobs.csv", "r") as file:
