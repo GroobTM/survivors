@@ -8,10 +8,11 @@ __version__ = "0.2"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import *
 from numpy import hypot
 from time import time
 from random import randint
+from attack import Aimed_Attack
+from constants import *
 
 
 def normalise(dx, dy):
@@ -191,7 +192,6 @@ class Base_Actor(Actor):
         self.pos = (self.x_pos - offset_x, self.y_pos - offset_y)
         super().draw()
         
-
 class Player(Base_Actor):
     """A class that describes the player character.
 
@@ -272,9 +272,6 @@ class Player(Base_Actor):
 
         if self.dx == 0 and self.dy == 0:
             self.image = f"{self.img_dir}{self.img_base}_idle"
-
-        
-
 
 class Monster(Base_Actor):
     """A class that describes basic monsters.
@@ -390,7 +387,6 @@ class Monster(Base_Actor):
         self.dx, self.dy = self.calculate_direction(player)
         super().update(player)
 
-
 class Charger(Monster):
     """A class describing monsters that charge in a straight line.
     
@@ -469,3 +465,128 @@ class Charger(Monster):
             self.alive = False
         super(Monster, self).update(player)
 
+class Boss(Monster):
+    """This class describes the behaviour of boss monsters.
+    These monsters dont approach the player but shoot projectiles at the them.
+
+    Child of Monster
+
+    Attributes
+    ----------
+    distance_to_player : float  - distance between the monster and the player
+    attack_list : [obj, ...]    - a list of attack objects
+    attack_speed : int  - speed of the attack objects
+    attack_damage : int - damage dealt by the attack objects
+    attack_duration : float     - how long the attack objects exist for
+    attack_frequency : float    - how frequently the attack objects are spawned
+    attack_cooldown : float     - time the last attack object was created
+    attack_img : string - name of the attack objects sprite
+    attack_dir : string - name of the attack objects sprites directory
+
+    Methods
+    -------
+    calculate_distance_to_player(player)    - Calculates the distance between
+                          the player and the monster.
+    attack(player)      - Checks if a new attack object is due to be spawned and
+                          spawns the attack object if necessary.
+    move(player)        - Moves the monster by speed*(dx, dy) if the monster is
+                          outside its range.
+    update(player)      - Runs every game update. Runs 
+                          "calculate_distance_to_player", "attack", and parents
+                          "update". Then, runs the update method of all attacks 
+                          in "attack_list".
+
+    Parent
+    ------
+    """
+    __doc__ += Monster.__doc__
+
+    def __init__(self, img, screen_coords, speed, health, damage, 
+                 xp_value, attack_stats, img_dir=""):
+        """Constructs the Boss class.
+
+        Parameters
+        ----------
+        img : str           - image name (without frame number or direction)
+        screen_coords : (int, int, int, int) - coordinates of the screen
+        speed : int         - speed of monster
+        health : int        - health of monster
+        damage : int        - damage dealt by monster
+        xp_value : int      - the xp value of the monster
+        attack_stats : dict - a dictionary containing the values of the boss 
+                              monsters attacks
+        img_dir : str       - sub directory of image (optional)
+        """
+
+        super().__init__(img, screen_coords, speed, health, damage, xp_value, 
+                         img_dir)
+        self.distance_to_player = 0.0
+        self.attack_list = []
+        self.attack_speed = attack_stats["speed"]
+        self.attack_damage = attack_stats["damage"]
+        self.attack_duration = attack_stats["duration"]
+        self.attack_frequency = attack_stats["frequency"]
+        self.attack_cooldown = time() + attack_stats["frequency"]
+        self.attack_img = attack_stats["img"]
+        self.attack_dir = attack_stats["dir"]
+        
+
+    def calculate_distance_to_player(self, player):
+        """Calculates the distance between the player and the monster.
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+        
+        self.distance_to_player = hypot(player.x_pos - self.x_pos, 
+                                        player.y_pos - self.y_pos)
+
+    def attack(self, player):
+        """Checks if a new attack object is due to be spawned and spawns the 
+        attack object if necessary.
+        
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        if time() - self.attack_cooldown >= self.attack_frequency:
+            self.attack_list.append(Aimed_Attack(self.attack_img, 
+                                                 self, [player], 
+                                                 self.attack_speed, 
+                                                 self.attack_damage, 
+                                                 self.attack_duration, 
+                                                 img_dir=self.attack_dir))
+
+    def move(self, player):
+        """Moves the monster by speed*(dx, dy) if the monster is outside its 
+        range.
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        if self.distance_to_player >= hypot(HALF_WINDOW_H, HALF_WINDOW_W):
+            for i in range(self.speed):
+                self.x_pos += self.dx
+                self.y_pos += self.dy
+
+    def update(self, player):
+        """Runs every game update. Runs "calculate_distance_to_player", 
+        "attack", and parents "update". Then, runs the update method
+        of all attacks in "attack_list".
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        self.calculate_distance_to_player(player)
+        self.attack(player)
+        super().update(player)
+        
+        
+        for attack in self.attack_list:
+            attack.update([player])
