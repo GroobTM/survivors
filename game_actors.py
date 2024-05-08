@@ -13,26 +13,7 @@ from time import time
 from random import randint
 from attack import Aimed_Attack
 from constants import *
-
-
-def normalise(dx, dy):
-    """Normalises a vector.
-    
-    Parameters
-    ----------
-    dx : float          - x component of vector
-    dy : float          - y component of vector
-    
-    Return
-    ------
-    (float, float)      - normalised vector
-    """
-
-    hyp = hypot(dx, dy)
-    if hyp != 0:
-        return [dx, dy] / hyp
-    else:
-        return (0, 0)
+from shared_function import normalise
 
 
 class Base_Actor(Actor):
