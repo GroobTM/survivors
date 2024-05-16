@@ -137,7 +137,7 @@ def draw():
     """
 
     if state == State.MENU:
-        pass
+        screen.blit("menu", (0, 0))
     elif state == State.PLAY:
         game.draw(screen)
     elif state == State.GAME_OVER:
