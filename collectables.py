@@ -4,14 +4,15 @@ This module creates the framework for the different types of collectables that
 can spawn when killing a monster.
 """
 
-__version__ = "0.1"
+__version__ = "0.2"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor
-from constants import HEAL_VALUE
+from numpy import hypot
+from constants import HEAL_VALUE, CONDENSE_DISTANCE
 
 
-class Base_Collectable(Actor):#
+class Base_Collectable(Actor):
     """A class that describes the basic functions of collectables.
 
     Attributes
@@ -118,7 +119,9 @@ class XP(Base_Collectable):
     -------
     active_effect(game) - Adds the collectables value to the xp counter and 
                           runs parent "active_effect".
-
+    condense(collectables, search_distance) - Condenses other nearby xp into 
+                          this object and sets an appropriate sprite.
+                          
     Parent
     ------
     """
@@ -135,7 +138,7 @@ class XP(Base_Collectable):
 
         self.value = monster.xp_value
         img = "collectables\\xp"
-        img_length = len(img)
+        #img_length = len(img)
 
         # Select the correct XP level image based on the value.
         if self.value < 10:
@@ -146,8 +149,8 @@ class XP(Base_Collectable):
             img += "3"
         
         # Fixes bug where sometimes somehow two numbers are added to the string
-        if len(img) != img_length + 1:
-            img = img[:img_length + 1]
+        #if len(img) != img_length + 1:
+        #    img = img[:img_length + 1]
         super().__init__(img, monster)
         
     def active_effect(self, game):
@@ -161,6 +164,37 @@ class XP(Base_Collectable):
 
         game.xp += self.value
         super().active_effect(game)
+
+    def condense(self, collectables, search_distance):
+        """Condenses other nearby xp into this object and sets an appropriate 
+        sprite.
+
+        Parameters
+        ----------
+        collectables : [obj,...]    - a list of collectables that currently 
+                              exist
+        search_distance : int   - the distance at which other xp objects are
+                              considered "nearby"
+        """
+        
+        for collectable in collectables:
+            if type(collectable) == XP and collectable.exists and collectable != self:
+                distance = hypot(collectable.x_pos - self.x_pos, collectable.y_pos - self.y_pos)
+
+                if distance <= search_distance:
+                    self.value += collectable.value
+                    print("value",self.value)
+                    collectable.exists = False
+                    img = "collectables\\xp"
+
+                    # Select the correct XP level image based on the value.
+                    if self.value < 5:
+                        img += "1"
+                    elif self.value < 20:
+                        img += "2"
+                    else:
+                        img += "3"
+                    self.image = img
 
 class Cake(Base_Collectable):
     """A class that describes a cake healing item.

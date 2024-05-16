@@ -3,12 +3,12 @@
 This module defines the Game class. This class combines all other classes into
 one place and describes how they communicate with each other.
 """
-__version__ = "0.6"
+__version__ = "0.7"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
 from time import time
-from random import randint
+from random import randint, sample
 from game_actors import Player, Monster
 from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
@@ -36,14 +36,14 @@ class Game():
     -------
     screen_coords() : (int, int, int, int)  - Calculates the coordinates of the
                           edge of the screen.
-    update()            - Runs every game update. Calculates the current time
-                          and current minute. Adds new mobs to "monsters_alive"
-                          and removes dead mobs from "monsters_alive".
-                          Then, runs "update" for "player" and for each monster
-                          in "monsters_alive".
+    update()            - Runs every game update. Runs various methods for
+                          "player", "monsters_alive", "collectables", and 
+                          "weapons". (See "update" docstring for more info.)
     draw(screen)        - Calculates the position of the screen. Draws the 
-                          background and calls the "draw" for "player" and each 
-                          monster in "mosters_alive".
+                          background and calls the "draw" for "player", each 
+                          collectable in "collectables", each weapon in 
+                          "weapons", and each monster in "mosters_alive".
+                          Then, draws the UI.
     """
 
     def __init__(self, mobs):
@@ -88,15 +88,35 @@ class Game():
         """Runs every game update. Calculates the current time and current 
         minute. 
         
+        PLAYER
+        ------
+        Runs "update" for "player".
+
+        MONSTERS
+        --------
         Checks how many updates have passed since the last batch of monsters
         spawned and, if enough have passed, adds a new batch to "monsters_alive"
         using data from "mobs".
         
         Removes monsters from "monsters_alive" if their "alive" attribute is 
-        False.
+        False. Additionally, adds an instance of "XP" and (potentially) "Cake"
+        to "collectables" when a monster is removed.
         
-        Then, runs "update" for "player" and for each monster in 
-        "monsters_alive".
+        Then, runs "update" for each monster in "monsters_alive".
+        
+        COLLECTABLES
+        ------------
+        Checks if the length of "collectables" is greater than 
+        "CONDENSE_THRESHOLD" and if so selects "CONDENSE_AMOUNT" of collectables
+        randomly and, if they are xp, runs their "condense" methods.
+
+        Removes any collectables that no longer exist from "collectables".
+        
+        Then, runs "update" for each collectable in "collectables".
+
+        WEAPONS
+        -------
+        Runs "update" for each weapon in "weapons".
         """
 
         self.current_time = time() - self.game_start_time
@@ -116,7 +136,6 @@ class Game():
                                                       row["damage"],
                                                       row["xp_value"],
                                                       row["dir"]))
-        
         for monster in self.monsters_alive:
             if not monster.alive:
                 if monster.damage_death:
@@ -125,17 +144,28 @@ class Game():
                         self.collectables.append(Cake(monster))
                 self.monsters_alive.remove(monster)
             monster.update(self.player)
+
+        if len(self.collectables) >= CONDENSE_THRESHOLD:
+            condense_pointer = min(len(self.collectables) // CONDENSE_THRESHOLD - 1, 2)
+            for collectable in sample(self.collectables, CONDENSE_AMOUNT):
+                if type(collectable) == XP:
+                    collectable.condense(self.collectables, CONDENSE_DISTANCE[condense_pointer])
+
         for collectable in self.collectables:
             if not collectable.exists:
                 self.collectables.remove(collectable)
             collectable.update(self)
+        
         for weapon in self.weapons:
             weapon.update(self.player, self.monsters_alive)
 
 
     def draw(self, screen):
         """Calculates the position of the screen. Draws the background and calls
-        the "draw" for "player" and each monster in "mosters_alive".
+        the "draw" for "player", each collectable in "collectables", each weapon
+        in "weapons", and each monster in "mosters_alive".
+
+        Then, draws the UI.
         """
 
         offset_x = max(0, min(LEVEL_W - WIDTH, self.player.x_pos - WIDTH / 2))
