@@ -141,7 +141,7 @@ def draw():
     elif state == State.PLAY:
         game.draw(screen)
     elif state == State.GAME_OVER:
-        pass
+        screen.blit("game_over", (0,0))
     elif state == State.PAUSE:
         pass
     elif state == State.LEVEL_UP:

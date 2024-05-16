@@ -125,7 +125,7 @@ class Game():
         self.player.update()
 
         self.timer += 1
-        if self.timer == SPAWN_RATE:
+        if self.timer == SPAWN_RATE[self.current_minute]:
             self.timer = 0
             for index, row in zip(range(len(self.mobs)), self.mobs):
                 if (self.current_minute in row["spawn_time"] ):
