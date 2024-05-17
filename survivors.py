@@ -163,6 +163,52 @@ with open("values/mobs.csv", "r") as file:
                                            mobs[row]["spawn_time"].split("/")))
         mobs[row]["xp_value"] = int(mobs[row]["xp_value"])
 
+with open("values/chargers.csv", "r") as file:
+    reader = DictReader(file)
+    chargers = []
+    for row in reader:
+        chargers.append(row)
+
+    # Sets the data type for each entry
+    for row in range(len(chargers)):
+        chargers[row]["speed"] = int(chargers[row]["speed"])
+        chargers[row]["health"] = int(chargers[row]["health"])
+        chargers[row]["damage"] = int(chargers[row]["damage"])
+        chargers[row]["spawn_time"] = list(map(int,
+                                        chargers[row]["spawn_time"].split("/")))
+        chargers[row]["xp_value"] = int(chargers[row]["xp_value"])
+
+with open("values/bosses.csv", "r") as file:
+    with open("values/weapons/boss_fireball.csv", "r") as file2:
+        reader = DictReader(file2)
+        boss_attack = []
+        for row in reader:
+            boss_attack.append(row)
+
+        # Sets the data type for each entry
+        for row in range(len(boss_attack)):
+            boss_attack[row]["speed"] = int(boss_attack[row]["speed"])
+            boss_attack[row]["damage"] = int(boss_attack[row]["damage"])
+            boss_attack[row]["duration"] = float(boss_attack[row]["duration"])
+            boss_attack[row]["pierce"] = int(boss_attack[row]["pierce"])
+            boss_attack[row]["frequency"] = float(boss_attack[row]["frequency"])
+            boss_attack[row]["img"] = str(boss_attack[row]["img"])
+            boss_attack[row]["dir"] = str(boss_attack[row]["dir"])
+
+    reader = DictReader(file)
+    bosses = []
+    for row in reader:
+        bosses.append(row)
+
+    # Sets the data type for each entry
+    for row in range(len(bosses)):
+        bosses[row]["speed"] = int(bosses[row]["speed"])
+        bosses[row]["health"] = int(bosses[row]["health"])
+        bosses[row]["damage"] = int(bosses[row]["damage"])
+        bosses[row]["spawn_time"] = list(map(int,
+                                        bosses[row]["spawn_time"].split("/")))
+        bosses[row]["xp_value"] = int(bosses[row]["xp_value"])
+
 state = State.MENU
-game = Game(mobs)
+game = Game(mobs, chargers)
 pgzrun.go()

@@ -9,7 +9,7 @@ __author__ = "Alex Page, Reuben Wiles Maguire"
 from pygame import transform
 from time import time
 from random import randint, sample
-from game_actors import Player, Monster
+from game_actors import Player, Monster, Charger
 from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
 from constants import *
@@ -46,7 +46,7 @@ class Game():
                           Then, draws the UI.
     """
 
-    def __init__(self, mobs):
+    def __init__(self, mobs, chargers):
         """Constructs the Game class.
 
         Attributes
@@ -57,13 +57,15 @@ class Game():
         self.player = Player(PLAYER_SPRITE, HALF_LEVEL_W, HALF_LEVEL_H, 
                              PLAYER_SPEED, PLAYER_HEALTH, PLAYER_DIR)
         self.mobs = mobs
+        self.chargers = chargers
         self.monsters_alive = []
         self.collectables = []
         self.weapons = [Thrown_Dagger()]
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
-        self.timer = 0
+        self.mob_timer = 0
+        self.charger_timer = 0
         self.xp = 0
         self.xp_cap = LEVEL_CAP_BASE
         self.level = 1
@@ -124,9 +126,9 @@ class Game():
 
         self.player.update()
 
-        self.timer += 1
-        if self.timer == SPAWN_RATE[self.current_minute]:
-            self.timer = 0
+        self.mob_timer += 1
+        if self.mob_timer == SPAWN_RATE[self.current_minute]:
+            self.mob_timer = 0
             for index, row in zip(range(len(self.mobs)), self.mobs):
                 if (self.current_minute in row["spawn_time"] ):
                     self.monsters_alive.append(Monster(row["img"],
@@ -135,6 +137,19 @@ class Game():
                                                       row["health"],
                                                       row["damage"],
                                                       row["xp_value"],
+                                                      row["dir"]))
+        self.charger_timer += 1
+        if self.charger_timer == SPAWN_RATE[self.current_minute]:
+            self.charger_timer = 0
+            for index, row in zip(range(len(self.chargers)), self.chargers):
+                if (self.current_minute in row["spawn_time"] ):
+                    self.monsters_alive.append(Charger(row["img"],
+                                                      self.screen_coords(),
+                                                      row["speed"],
+                                                      row["health"],
+                                                      row["damage"],
+                                                      row["xp_value"],
+                                                      self.player,
                                                       row["dir"]))
         for monster in self.monsters_alive:
             if not monster.alive:

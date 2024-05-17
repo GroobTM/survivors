@@ -391,8 +391,8 @@ class Charger(Monster):
     """
     __doc__ += Monster.__doc__
 
-    def __init__(self, img, screen_coords, speed, health, damage, player, 
-                 img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, xp_value, 
+                 player, img_dir=""):
         """Constructs the Charger class.
         
         Parameters
@@ -407,7 +407,8 @@ class Charger(Monster):
         """
 
         self.cooldown_start = -1.0
-        super().__init__(img, screen_coords, speed, health, damage, img_dir)
+        super().__init__(img, screen_coords, speed, health, damage, xp_value, 
+                         img_dir)
         self.dx, self.dy = self.calculate_direction(player)
     
     def collision(self, player):
