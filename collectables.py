@@ -183,7 +183,6 @@ class XP(Base_Collectable):
 
                 if distance <= search_distance:
                     self.value += collectable.value
-                    print("value",self.value)
                     collectable.exists = False
                     img = "collectables\\xp"
 

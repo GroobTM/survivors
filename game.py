@@ -3,7 +3,7 @@
 This module defines the Game class. This class combines all other classes into
 one place and describes how they communicate with each other.
 """
-__version__ = "0.7"
+__version__ = "0.8"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
@@ -14,6 +14,8 @@ from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
 from constants import *
 
+
+WEAPON_LIST = (Thrown_Dagger(1), Arrow(0), Magic_Missile(0))
 
 class Game():
     """A class that describes the game and how objects communicate with each
@@ -60,7 +62,7 @@ class Game():
         self.chargers = chargers
         self.monsters_alive = []
         self.collectables = []
-        self.weapons = [Thrown_Dagger()]
+        self.weapons = WEAPON_LIST
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0

@@ -1,10 +1,10 @@
-"""----INSERT GAME NAME----
+"""Princess In Peril
 
 This module loads the mob data and creates the "Game" object. Finally it starts
 the game.
 """
 
-__version__ = "0.3"
+__version__ = "0.6"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 import pgzero, pgzrun, pygame
@@ -113,11 +113,14 @@ def update():
             level_up_choice = level_up.get_choice()
             
             if level_up_choice != None:
-                for weapon in game.weapons:
-                    if type(weapon) == type(level_up_choice):
-                        game.weapons.remove(weapon)
+                for i in range(len(game.weapons)):
+                    if type(game.weapons[i]) == type(level_up_choice):
+                        game.weapons[i].level_up_weapon()
             
-                game.weapons.append(level_up_choice)
+            else:
+                game.player.health += HEAL_VALUE // 2
+                if game.player.health > game.player.max_health:
+                    game.player.health = game.player.max_health
 
             time_diff = time() - time_paused
             game.game_start_time += time_diff
