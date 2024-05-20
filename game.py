@@ -3,16 +3,19 @@
 This module defines the Game class. This class combines all other classes into
 one place and describes how they communicate with each other.
 """
-__version__ = "0.6"
+__version__ = "0.8"
 __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
-from game_actors import Player, Monster
-from constants import *
 from time import time
+from random import randint, sample
+from game_actors import Player, Monster, Charger, Boss
+from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
+from constants import *
 
 
+WEAPON_LIST = (Thrown_Dagger(1), Arrow(0), Magic_Missile(0))
 
 class Game():
     """A class that describes the game and how objects communicate with each
@@ -35,17 +38,17 @@ class Game():
     -------
     screen_coords() : (int, int, int, int)  - Calculates the coordinates of the
                           edge of the screen.
-    update()            - Runs every game update. Calculates the current time
-                          and current minute. Adds new mobs to "monsters_alive"
-                          and removes dead mobs from "monsters_alive".
-                          Then, runs "update" for "player" and for each monster
-                          in "monsters_alive".
+    update()            - Runs every game update. Runs various methods for
+                          "player", "monsters_alive", "collectables", and 
+                          "weapons". (See "update" docstring for more info.)
     draw(screen)        - Calculates the position of the screen. Draws the 
-                          background and calls the "draw" for "player" and each 
-                          monster in "mosters_alive".
+                          background and calls the "draw" for "player", each 
+                          collectable in "collectables", each weapon in 
+                          "weapons", and each monster in "mosters_alive".
+                          Then, draws the UI.
     """
 
-    def __init__(self, mobs):
+    def __init__(self, mobs, chargers, bosses):
         """Constructs the Game class.
 
         Attributes
@@ -53,18 +56,25 @@ class Game():
         mobs : [dict,...]   - a list of dictionaries that contain mob data
         """
 
-        self.player = Player("princess", HALF_LEVEL_W, HALF_LEVEL_H, 
-                             5, 100, "princess")
+        self.player = Player(PLAYER_SPRITE, HALF_LEVEL_W, HALF_LEVEL_H, 
+                             PLAYER_SPEED, PLAYER_HEALTH, PLAYER_DIR)
         self.mobs = mobs
+        self.chargers = chargers
         self.monsters_alive = []
-        self.weapons = [Magic_Missile(), Thrown_Dagger()]
+        self.bosses = bosses
+        self.final_boss_spawned = False
+        self.collectables = []
+        self.weapons = WEAPON_LIST
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0
-        self.timer = 0
+        self.mob_timer = 0
+        self.charger_timer = 0
         self.xp = 0
-        self.xp_cap = 100
+        self.xp_cap = LEVEL_CAP_BASE
         self.level = 1
+        self.won = False
+        
 
     def screen_coords(self):
         """Calculates the coordinates of the edge of the screen.
@@ -86,15 +96,35 @@ class Game():
         """Runs every game update. Calculates the current time and current 
         minute. 
         
+        PLAYER
+        ------
+        Runs "update" for "player".
+
+        MONSTERS
+        --------
         Checks how many updates have passed since the last batch of monsters
         spawned and, if enough have passed, adds a new batch to "monsters_alive"
         using data from "mobs".
         
         Removes monsters from "monsters_alive" if their "alive" attribute is 
-        False.
+        False. Additionally, adds an instance of "XP" and (potentially) "Cake"
+        to "collectables" when a monster is removed.
         
-        Then, runs "update" for "player" and for each monster in 
-        "monsters_alive".
+        Then, runs "update" for each monster in "monsters_alive".
+        
+        COLLECTABLES
+        ------------
+        Checks if the length of "collectables" is greater than 
+        "CONDENSE_THRESHOLD" and if so selects "CONDENSE_AMOUNT" of collectables
+        randomly and, if they are xp, runs their "condense" methods.
+
+        Removes any collectables that no longer exist from "collectables".
+        
+        Then, runs "update" for each collectable in "collectables".
+
+        WEAPONS
+        -------
+        Runs "update" for each weapon in "weapons".
         """
 
         self.current_time = time() - self.game_start_time
@@ -102,31 +132,83 @@ class Game():
 
         self.player.update()
 
-        self.timer += 1
-        if self.timer == SPAWN_RATE:
-            self.timer = 0
+        self.mob_timer += 1
+        if self.mob_timer >= SPAWN_RATE[min(self.current_minute, 7)]:
+            self.mob_timer = 0
             for index, row in zip(range(len(self.mobs)), self.mobs):
-                if (self.current_minute in row["spawn_time"] 
-                    and not (row["has_spawned"] and row["unique"])):
-                    self.mobs[index]["has_spawned"] = True
+                if (self.current_minute in row["spawn_time"] ):
                     self.monsters_alive.append(Monster(row["img"],
                                                       self.screen_coords(),
                                                       row["speed"],
                                                       row["health"],
                                                       row["damage"],
+                                                      row["xp_value"],
                                                       row["dir"]))
+        self.charger_timer += 1
+        if self.charger_timer >= SPAWN_RATE[self.current_minute]:
+            self.charger_timer = 0
+            for index, row in zip(range(len(self.chargers)), self.chargers):
+                if (self.current_minute in row["spawn_time"] ):
+                    self.monsters_alive.append(Charger(row["img"],
+                                                      self.screen_coords(),
+                                                      row["speed"],
+                                                      row["health"],
+                                                      row["damage"],
+                                                      row["xp_value"],
+                                                      self.player,
+                                                      row["dir"]))
+                    
         
+        if self.current_minute >= 6 and not self.final_boss_spawned:
+            self.final_boss_spawned = True
+            for index, row in zip(range(len(self.bosses)), self.bosses):
+                self.monsters_alive.append(Boss(row["img"],
+                                                    self.screen_coords(),
+                                                    row["speed"],
+                                                    row["health"],
+                                                    row["damage"],
+                                                    row["xp_value"],
+                                                    row["attack_speed"],
+                                                    row["attack_damage"],
+                                                    row["attack_duration"],
+                                                    row["attack_frequency"],
+                                                    row["attack_img"],
+                                                    row["dir"]))
+        
+        if self.final_boss_spawned and len(self.monsters_alive) == 0:
+            self.won = True
         for monster in self.monsters_alive:
             if not monster.alive:
+                if monster.damage_death:
+                    self.collectables.append(XP(monster))
+                    if randint(1, 100) <= HEAL_SPAWN_CHANCE:
+                        self.collectables.append(Cake(monster))
                 self.monsters_alive.remove(monster)
             monster.update(self.player)
+
+        if len(self.collectables) >= CONDENSE_THRESHOLD:
+            condense_pointer = min(len(self.collectables) // 
+                                   CONDENSE_THRESHOLD - 1, 2)
+            for collectable in sample(self.collectables, CONDENSE_AMOUNT):
+                if type(collectable) == XP:
+                    collectable.condense(self.collectables, 
+                                         CONDENSE_DISTANCE[condense_pointer])
+
+        for collectable in self.collectables:
+            if not collectable.exists:
+                self.collectables.remove(collectable)
+            collectable.update(self)
+        
         for weapon in self.weapons:
             weapon.update(self.player, self.monsters_alive)
 
 
     def draw(self, screen):
         """Calculates the position of the screen. Draws the background and calls
-        the "draw" for "player" and each monster in "mosters_alive".
+        the "draw" for "player", each collectable in "collectables", each weapon
+        in "weapons", and each monster in "mosters_alive".
+
+        Then, draws the UI.
         """
 
         offset_x = max(0, min(LEVEL_W - WIDTH, self.player.x_pos - WIDTH / 2))
@@ -134,16 +216,19 @@ class Game():
 
         screen.blit("background", (-offset_x, -offset_y))
         self.player.draw(offset_x, offset_y)
+        for collectable in self.collectables:
+            collectable.draw(offset_x, offset_y)
         for monster in self.monsters_alive:
             monster.draw(offset_x, offset_y)
         for weapon in self.weapons:
             weapon.draw(offset_x, offset_y)
         
         # GUI
-        xp_offset = (1 - self.xp / self.xp_cap) * WIDTH
+        xp_offset = max(0, (1 - self.xp / self.xp_cap) * WIDTH)
         screen.blit("gui\\gui_xp_bar", (-xp_offset + BAR_BORDER, BAR_BORDER))
 
-        hp_offset = (1 - self.player.health / self.player.max_health) * WIDTH
+        hp_offset = min((1 - self.player.health / self.player.max_health) * 
+                        WIDTH, WIDTH)
         screen.blit("gui\\gui_health_bar", (-hp_offset + BAR_BORDER, 
                                        HEIGHT - BAR_HEIGHT + BAR_BORDER))
 

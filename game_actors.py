@@ -8,30 +8,12 @@ __version__ = "0.2"
 __author__ = "Reuben Wiles Maguire"
 
 from pgzero.builtins import Actor, keyboard, keys
-from constants import *
 from numpy import hypot
 from time import time
 from random import randint
-
-
-def normalise(dx, dy):
-    """Normalises a vector.
-    
-    Parameters
-    ----------
-    dx : float          - x component of vector
-    dy : float          - y component of vector
-    
-    Return
-    ------
-    (float, float)      - normalised vector
-    """
-
-    hyp = hypot(dx, dy)
-    if hyp != 0:
-        return [dx, dy] / hyp
-    else:
-        return (0, 0)
+from attack import Aimed_Attack
+from constants import *
+from shared_function import normalise
 
 
 class Base_Actor(Actor):
@@ -48,11 +30,13 @@ class Base_Actor(Actor):
     image : str         - combination of above attributes
     speed : int         - speed of creature
     health : int        - health of creature
-    x_pos : int         - x coordinate of creature
-    y_pos : int         - y coordinate of creature
+    x_pos : float       - x coordinate of creature
+    y_pos : float       - y coordinate of creature
     dx : float          - x component of creature movement
     dy : float          - y component of creature movement
     alive : bool        - if the mob is alive
+    damage_death : bool - if the mob was killed by damage and not a collision
+                          with the player
 
 
     "image" Explained
@@ -110,6 +94,7 @@ class Base_Actor(Actor):
         self.img_hurt_frame = 0
         self.img_frame_counter = 0
         self.alive = True
+        self.damage_death = False
     
     def hurt(self, damage):
         """Reduces the creatures health by "damage" and sets "img_hurt_frame" 
@@ -124,6 +109,7 @@ class Base_Actor(Actor):
         self.health -= damage
         self.img_hurt_frame = HURT_DURATION
         if self.health <= 0:
+            self.damage_death = True
             self.alive = False
 
     def collision(self, player):
@@ -187,7 +173,6 @@ class Base_Actor(Actor):
         self.pos = (self.x_pos - offset_x, self.y_pos - offset_y)
         super().draw()
         
-
 class Player(Base_Actor):
     """A class that describes the player character.
 
@@ -269,8 +254,8 @@ class Player(Base_Actor):
         if self.dx == 0 and self.dy == 0:
             self.image = f"{self.img_dir}{self.img_base}_idle"
 
-        
-
+            if self.img_hurt_frame > 0:
+                self.image += "_hurt"
 
 class Monster(Base_Actor):
     """A class that describes basic monsters.
@@ -280,6 +265,7 @@ class Monster(Base_Actor):
     Attributes
     ----------
     damage : int        - damage dealt by monster
+    xp_value : int      - the xp value of the monster
 
     Methods
     -------
@@ -295,7 +281,8 @@ class Monster(Base_Actor):
     """
     __doc__ += Base_Actor.__doc__
 
-    def __init__(self, img, screen_coords, speed, health, damage, img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, xp_value, 
+                 img_dir=""):
         """Constructs the Monster class.
 
         Parameters
@@ -305,9 +292,10 @@ class Monster(Base_Actor):
         speed : int         - speed of monster
         health : int        - health of monster
         damage : int        - damage dealt by monster
+        xp_value : int      - the xp value of the monster
         img_dir : str       - sub directory of image (optional)
         """
-
+        self.xp_value = xp_value
         self.damage = damage
         spawn_coords = self.calculate_spawn_coords(screen_coords)
         super().__init__(img, spawn_coords[0], spawn_coords[1], speed, health, 
@@ -383,7 +371,6 @@ class Monster(Base_Actor):
         self.dx, self.dy = self.calculate_direction(player)
         super().update(player)
 
-
 class Charger(Monster):
     """A class describing monsters that charge in a straight line.
     
@@ -407,8 +394,8 @@ class Charger(Monster):
     """
     __doc__ += Monster.__doc__
 
-    def __init__(self, img, screen_coords, speed, health, damage, player, 
-                 img_dir=""):
+    def __init__(self, img, screen_coords, speed, health, damage, xp_value, 
+                 player, img_dir=""):
         """Constructs the Charger class.
         
         Parameters
@@ -423,7 +410,8 @@ class Charger(Monster):
         """
 
         self.cooldown_start = -1.0
-        super().__init__(img, screen_coords, speed, health, damage, img_dir)
+        super().__init__(img, screen_coords, speed, health, damage, xp_value, 
+                         img_dir)
         self.dx, self.dy = self.calculate_direction(player)
     
     def collision(self, player):
@@ -462,3 +450,152 @@ class Charger(Monster):
             self.alive = False
         super(Monster, self).update(player)
 
+class Boss(Monster):
+    """This class describes the behaviour of boss monsters.
+    These monsters dont approach the player but shoot projectiles at the them.
+
+    Child of Monster
+
+    Attributes
+    ----------
+    distance_to_player : float  - distance between the monster and the player
+    attack_list : [obj, ...]    - a list of attack objects
+    attack_speed : int  - speed of the attack objects
+    attack_damage : int - damage dealt by the attack objects
+    attack_duration : float     - how long the attack objects exist for
+    attack_frequency : float    - how frequently the attack objects are spawned
+    attack_cooldown : float     - time the last attack object was created
+    attack_img : string - name of the attack objects sprite
+    attack_dir : string - name of the attack objects sprites directory
+    last_direction : float      - the last dx
+
+    Methods
+    -------
+    calculate_distance_to_player(player)    - Calculates the distance between
+                          the player and the monster.
+    attack(player)      - Checks if a new attack object is due to be spawned and
+                          spawns the attack object if necessary.
+    move(player)        - Moves the monster by speed*(dx, dy) if the monster is
+                          outside its range.
+    update(player)      - Runs every game update. Runs 
+                          "calculate_distance_to_player", "attack", and parents
+                          "update". Then, runs the update method of all attacks 
+                          in "attack_list".
+
+    Parent
+    ------
+    """
+    __doc__ += Monster.__doc__
+
+    def __init__(self, img, screen_coords, speed, health, damage, 
+                xp_value, attack_speed, attack_damage, attack_duration,
+                attack_frequency, attack_img, img_dir=""):
+        """Constructs the Boss class.
+
+        Parameters
+        ----------
+        img : str           - image name (without frame number or direction)
+        screen_coords : (int, int, int, int) - coordinates of the screen
+        speed : int         - speed of monster
+        health : int        - health of monster
+        damage : int        - damage dealt by monster
+        xp_value : int      - the xp value of the monster
+        attack_speed : int  - speed of the bosses attack
+        attack_damage : int - damage of the bosses attack
+        attack_duration : float - how long the bosses attack lasts
+        attack_frequency : float    - how long between the bosses attacks
+        attack_img : str    - sprite for the bosses attack
+        img_dir : str       - sub directory of image (optional)
+        """
+
+        super().__init__(img, screen_coords, speed, health, damage, xp_value, 
+                         img_dir)
+        self.distance_to_player = 0.0
+        self.attack_list = []
+        self.attack_speed = attack_speed
+        self.attack_damage = attack_damage
+        self.attack_duration = attack_duration
+        self.attack_frequency = attack_frequency
+        self.attack_cooldown = time() + attack_frequency
+        self.attack_img = attack_img
+        self.attack_dir = img_dir
+        
+
+    def calculate_distance_to_player(self, player):
+        """Calculates the distance between the player and the monster.
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+        
+        self.distance_to_player = hypot(player.x_pos - self.x_pos, 
+                                        player.y_pos - self.y_pos)
+
+    def attack(self, player):
+        """Checks if a new attack object is due to be spawned and spawns the 
+        attack object if necessary.
+        
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        if time() - self.attack_cooldown >= self.attack_frequency:
+            self.attack_cooldown = time()
+            self.attack_list.append(Aimed_Attack(self.attack_img, 
+                                                 self, [player], 
+                                                 self.attack_speed, 
+                                                 self.attack_damage, 
+                                                 self.attack_duration, 
+                                                 img_dir=self.attack_dir))
+
+    def move(self, player):
+        """Moves the monster by speed*(dx, dy) if the monster is outside its 
+        range.
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        if self.distance_to_player >= 400:
+            for i in range(self.speed):
+                self.x_pos += self.dx
+                self.y_pos += self.dy
+        else:
+            self.last_direction = self.dx
+            self.dx = 0
+            self.dy = 0
+
+    def update(self, player):
+        """Runs every game update. Runs "calculate_distance_to_player", 
+        "attack", and parents "update". Then, runs the update method
+        of all attacks in "attack_list".
+
+        Parameters
+        ----------
+        player : obj        - the player object
+        """
+
+        self.calculate_distance_to_player(player)
+        self.attack(player)
+        super().update(player)
+        
+        if self.dx == 0 and self.dy == 0:
+            if self.last_direction < 0:
+                self.image = f"{self.img_dir}{self.img_base}_l1"
+            else:
+                self.image = f"{self.img_dir}{self.img_base}_r1"
+
+            if self.img_hurt_frame > 0:
+                self.image += "_hurt"
+
+        for attack in self.attack_list:
+            attack.update([player])
+    
+    def draw(self, offset_x, offset_y):
+        for attack in self.attack_list:
+            attack.draw(offset_x, offset_y)
+        
+        super().draw(offset_x, offset_y)

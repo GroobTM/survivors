@@ -1,0 +1,2 @@
+name,img,dir,speed,health,damage,spawn_time,xp_value,attack_speed,attack_damage,attack_duration,attack_frequency,attack_img
+dragon,dragon_boss,dragon_boss,3,2000,20,6,1000,5,20,10.0,1.0,fireball

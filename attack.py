@@ -6,12 +6,13 @@ game window.
 
 __version__ = "0.4"
 __author__ = "Reuben Wiles Maguire"
+
 from pgzero.builtins import Actor
 from time import time
 from random import randint
 from numpy import hypot, arctan2, degrees
 from constants import WIDTH, ATTACK_IMMUNE, FRAME_TIME, MAX_ANIMATION_FRAMES
-from game_actors import normalise
+from shared_function import normalise
 
 class Attack(Actor):
     """A class that describes the properties of a basic attack.
