@@ -1,6 +1,6 @@
 name,img,dir,speed,health,damage,spawn_time,xp_value
-Slime,slime,slime,1,1,1,0/1/2,1
-Bat,bat,bat,2,1,1,1/2,1
-Goblin,goblin,goblin,3,2,2,3/4/5/6,3
-Skelly,skelly,skelly,2,5,4,4/5,4
-Orc,orc,orc,1,10,10,5/6,8
+Slime,slime,slime,1,1,1,0/1,1
+Bat,bat,bat,2,4,1,1/2,1
+Skelly,skelly,skelly,1,6,4,2/3,4
+Goblin,goblin,goblin,2,4,2,4/5/6,3
+Orc,orc,orc,1,12,10,5/6,8

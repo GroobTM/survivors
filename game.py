@@ -9,7 +9,7 @@ __author__ = "Alex Page, Reuben Wiles Maguire"
 from pygame import transform
 from time import time
 from random import randint, sample
-from game_actors import Player, Monster, Charger
+from game_actors import Player, Monster, Charger, Boss
 from collectables import XP, Cake
 from weapons import Thrown_Dagger, Arrow, Magic_Missile
 from constants import *
@@ -48,7 +48,7 @@ class Game():
                           Then, draws the UI.
     """
 
-    def __init__(self, mobs, chargers):
+    def __init__(self, mobs, chargers, bosses):
         """Constructs the Game class.
 
         Attributes
@@ -61,6 +61,8 @@ class Game():
         self.mobs = mobs
         self.chargers = chargers
         self.monsters_alive = []
+        self.bosses = bosses
+        self.final_boss_spawned = False
         self.collectables = []
         self.weapons = WEAPON_LIST
         self.game_start_time = time()
@@ -71,6 +73,8 @@ class Game():
         self.xp = 0
         self.xp_cap = LEVEL_CAP_BASE
         self.level = 1
+        self.won = False
+        
 
     def screen_coords(self):
         """Calculates the coordinates of the edge of the screen.
@@ -129,7 +133,7 @@ class Game():
         self.player.update()
 
         self.mob_timer += 1
-        if self.mob_timer == SPAWN_RATE[self.current_minute]:
+        if self.mob_timer >= SPAWN_RATE[min(self.current_minute, 7)]:
             self.mob_timer = 0
             for index, row in zip(range(len(self.mobs)), self.mobs):
                 if (self.current_minute in row["spawn_time"] ):
@@ -141,7 +145,7 @@ class Game():
                                                       row["xp_value"],
                                                       row["dir"]))
         self.charger_timer += 1
-        if self.charger_timer == SPAWN_RATE[self.current_minute]:
+        if self.charger_timer >= SPAWN_RATE[self.current_minute]:
             self.charger_timer = 0
             for index, row in zip(range(len(self.chargers)), self.chargers):
                 if (self.current_minute in row["spawn_time"] ):
@@ -153,6 +157,26 @@ class Game():
                                                       row["xp_value"],
                                                       self.player,
                                                       row["dir"]))
+                    
+        
+        if self.current_minute >= 6 and not self.final_boss_spawned:
+            self.final_boss_spawned = True
+            for index, row in zip(range(len(self.bosses)), self.bosses):
+                self.monsters_alive.append(Boss(row["img"],
+                                                    self.screen_coords(),
+                                                    row["speed"],
+                                                    row["health"],
+                                                    row["damage"],
+                                                    row["xp_value"],
+                                                    row["attack_speed"],
+                                                    row["attack_damage"],
+                                                    row["attack_duration"],
+                                                    row["attack_frequency"],
+                                                    row["attack_img"],
+                                                    row["dir"]))
+        
+        if self.final_boss_spawned and len(self.monsters_alive) == 0:
+            self.won = True
         for monster in self.monsters_alive:
             if not monster.alive:
                 if monster.damage_death:

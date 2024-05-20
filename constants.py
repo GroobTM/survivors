@@ -20,7 +20,7 @@ HURT_DURATION = 2
 HURT_COOLDOWN = 10
 
 # Spawning
-SPAWN_RATE = (20, 20, 15, 15, 10, 10, 5, 5)
+SPAWN_RATE = (40, 30, 20, 10, 20, 20, 20, 20)
 SPAWN_DISTANCE = 50
 
 # Attacks

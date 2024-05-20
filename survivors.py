@@ -77,7 +77,7 @@ def update():
         game.game_start_time = time()
 
     elif state == State.PLAY:
-        if game.player.health <= 0:
+        if game.player.health <= 0 or game.won:
             state = State.GAME_OVER
 
         elif game.xp >= game.xp_cap:
@@ -182,22 +182,6 @@ with open("values/chargers.csv", "r") as file:
         chargers[row]["xp_value"] = int(chargers[row]["xp_value"])
 
 with open("values/bosses.csv", "r") as file:
-    with open("values/weapons/boss_fireball.csv", "r") as file2:
-        reader = DictReader(file2)
-        boss_attack = []
-        for row in reader:
-            boss_attack.append(row)
-
-        # Sets the data type for each entry
-        for row in range(len(boss_attack)):
-            boss_attack[row]["speed"] = int(boss_attack[row]["speed"])
-            boss_attack[row]["damage"] = int(boss_attack[row]["damage"])
-            boss_attack[row]["duration"] = float(boss_attack[row]["duration"])
-            boss_attack[row]["pierce"] = int(boss_attack[row]["pierce"])
-            boss_attack[row]["frequency"] = float(boss_attack[row]["frequency"])
-            boss_attack[row]["img"] = str(boss_attack[row]["img"])
-            boss_attack[row]["dir"] = str(boss_attack[row]["dir"])
-
     reader = DictReader(file)
     bosses = []
     for row in reader:
@@ -211,7 +195,13 @@ with open("values/bosses.csv", "r") as file:
         bosses[row]["spawn_time"] = list(map(int,
                                         bosses[row]["spawn_time"].split("/")))
         bosses[row]["xp_value"] = int(bosses[row]["xp_value"])
+        bosses[row]["attack_speed"] = int(bosses[row]["attack_speed"])
+        bosses[row]["attack_damage"] = int(bosses[row]["attack_damage"])
+        bosses[row]["attack_duration"] = float(bosses[row]["attack_duration"])
+        bosses[row]["attack_frequency"] = float(bosses[row]["attack_frequency"])
+        bosses[row]["attack_img"] = str(bosses[row]["attack_img"])
 
+    print(bosses)
 state = State.MENU
-game = Game(mobs, chargers)
+game = Game(mobs, chargers, bosses)
 pgzrun.go()
