@@ -144,11 +144,11 @@ def draw():
     elif state == State.PLAY:
         game.draw(screen)
     elif state == State.GAME_OVER:
-        screen.blit("game_over", (0,0))
+        screen.blit("game_over", (0, 0))
     elif state == State.PAUSE:
-        pass
+        screen.blit("paused", (0, 0))
     elif state == State.LEVEL_UP:
-        level_up.draw()
+        level_up.draw(screen)
 
 # Loads mob data from "mobs.csv"
 with open("values/mobs.csv", "r") as file:

@@ -163,10 +163,12 @@ class Game():
             monster.update(self.player)
 
         if len(self.collectables) >= CONDENSE_THRESHOLD:
-            condense_pointer = min(len(self.collectables) // CONDENSE_THRESHOLD - 1, 2)
+            condense_pointer = min(len(self.collectables) // 
+                                   CONDENSE_THRESHOLD - 1, 2)
             for collectable in sample(self.collectables, CONDENSE_AMOUNT):
                 if type(collectable) == XP:
-                    collectable.condense(self.collectables, CONDENSE_DISTANCE[condense_pointer])
+                    collectable.condense(self.collectables, 
+                                         CONDENSE_DISTANCE[condense_pointer])
 
         for collectable in self.collectables:
             if not collectable.exists:

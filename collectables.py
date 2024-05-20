@@ -178,8 +178,10 @@ class XP(Base_Collectable):
         """
         
         for collectable in collectables:
-            if type(collectable) == XP and collectable.exists and collectable != self:
-                distance = hypot(collectable.x_pos - self.x_pos, collectable.y_pos - self.y_pos)
+            if (type(collectable) == XP and collectable.exists 
+                and collectable != self):
+                distance = hypot(collectable.x_pos - self.x_pos, 
+                                 collectable.y_pos - self.y_pos)
 
                 if distance <= search_distance:
                     self.value += collectable.value

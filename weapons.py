@@ -19,8 +19,6 @@ class Weapon():
     Attributes
     ----------
     name : str              - the weapons name
-    icon : str              - the name of an image file in ./images used for the
-                              weapons icon
     progression : dict      - dictionary that describes how "speed", "damage",  
                               "duration", "pierce", "quantity", and "frequency"
                               change as the weapon levels up
@@ -36,6 +34,8 @@ class Weapon():
     pierce : int            - number of enemies the weapons attacks can pierce
     quantity : int          - the number of attacks the weapon makes at once
     frequency : int         - how often the weapon makes an attack
+    description : str       - the difference between the current weapon level
+                              and the next
 
     Methods
     -------
@@ -63,14 +63,12 @@ class Weapon():
                               for all objects in "attacks".
     """
 
-    def __init__(self, name, icon, progression, starting_level):
+    def __init__(self, name, progression, starting_level):
         """Constructs the Weapon class.
 
         Parameter
         ---------
         name : str              - the weapons name
-        icon : str              - the name of an image file in ./images used for
-                                  the weapons icon
         progression : dict      - dictionary that describes how "speed", 
                                   "damage", "duration", "pierce", "quantity", 
                                   and "frequency" change as the weapon levels up
@@ -78,7 +76,6 @@ class Weapon():
         """
 
         self.name = name
-        self.icon = icon
         self.progression = progression
         self.level = starting_level
         self.level_cap = len(self.progression) - 1
@@ -123,6 +120,8 @@ class Weapon():
         self.pierce = int(self.progression[self.level]["pierce"])
         self.quantity = int(self.progression[self.level]["quantity"])
         self.frequency = float(self.progression[self.level]["frequency"])
+        self.description = str(self.progression[self.level]["description"])
+        self.description = self.description.replace("\\n", "\n")
 
         for i in range(self.quantity):
             self.attack_interval.append(self.delay)
@@ -240,11 +239,10 @@ class Thrown_Dagger(Weapon):
         """
 
         name = "Thrown Dagger"
-        icon = "xp1"
         progression = self.load_progression("thrown_dagger.csv")
         self.img = "thrown_dagger_"
         self.img_dir = "thrown_dagger"
-        super().__init__(name, icon, progression, starting_level)
+        super().__init__(name, progression, starting_level)
 
     def spawn_attack(self, player, mob_list):
         """Adds an instance of the "Attack" class to "attacks"."""
@@ -283,11 +281,10 @@ class Arrow(Weapon):
         """
 
         name = "Bow and Arrow"
-        icon = "xp2"
         progression = self.load_progression("arrow.csv")
-        self.img = "xp2"
+        self.img = "arrow"
         self.img_dir = "arrow"
-        super().__init__(name, icon, progression, starting_level)
+        super().__init__(name, progression, starting_level)
 
     def spawn_attack(self, player, mob_list):
         """Adds an instance of the "Aimed_Attack" class to "attacks"."""
@@ -334,11 +331,10 @@ class Magic_Missile(Weapon):
         """
 
         name = "Magic Missile"
-        icon = "xp3"
         progression = self.load_progression("magic_missile.csv")
         self.img = ["magic_missile_1", "magic_missile_2"]
         self.img_dir = "magic_missile"
-        super().__init__(name, icon, progression, starting_level)
+        super().__init__(name, progression, starting_level)
 
     def set_weapon_stats(self):
         """Runs parent then sets "homing" based on "progression" and "level".
