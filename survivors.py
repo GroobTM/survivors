@@ -49,11 +49,14 @@ def update():
     PLAY State
     ----------
     Checks if the player is alive and sets the state to GAME_OVER if the player
-    is dead.
+    is dead or has won.
     Checks the players xp against the xp cap and levels them up if necessary.
-    When the player levels up, sets the state to LEVEL_UP and record the time.
+    When the player levels up, sets the state to LEVEL_UP, creates a Level_Up
+    object, and record the time.
     Additionally, resets the players xp to 0 (plus overflow from last level) and
     increases the xp cap.
+    Checks if the player has pressed escape and sets the state to PAUSE if
+    nescesary. Also records the time the game was paused.
     
     GAME_OVER State
     ---------------
@@ -67,7 +70,12 @@ def update():
 
     LEVEL_UP State
     --------------
-    TODO
+    Checks the state of the "Level_Up" objects "chosen" attribute. When "chosen"
+    is True, checks which option the player picked and upgrades that weapon. If
+    the player didn't select an option because all their weapons were max level,
+    the player will be healed.
+    Finally, calculates how long the game has been in the LEVEL_UP state, then 
+    applies this offset to the game timer.
     """
 
     global state, game, level_up, mobs, time_paused
@@ -100,7 +108,7 @@ def update():
     elif state == State.GAME_OVER:
         if keyboard.space:
             state = State.PLAY
-            game = Game(mobs)
+            game = Game(mobs, chargers, bosses)
 
     elif state == State.PAUSE:
         if keyboard.space:
