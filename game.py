@@ -8,6 +8,7 @@ __author__ = "Alex Page, Reuben Wiles Maguire"
 
 from pygame import transform
 from time import time
+from copy import deepcopy
 from random import randint, sample
 from game_actors import Player, Monster, Charger, Boss
 from collectables import XP, Cake
@@ -64,7 +65,7 @@ class Game():
         self.bosses = bosses
         self.final_boss_spawned = False
         self.collectables = []
-        self.weapons = WEAPON_LIST
+        self.weapons = deepcopy(WEAPON_LIST)
         self.game_start_time = time()
         self.current_time = 0.0
         self.current_minute = 0

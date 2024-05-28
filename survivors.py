@@ -109,9 +109,6 @@ def update():
         if keyboard.space:
             state = State.PLAY
             game = Game(mobs, chargers, bosses)
-            for weapon in game.weapons:
-                weapon.set_weapon_level(0)
-            game.weapons[0].set_weapon_level(1)
     elif state == State.PAUSE:
         if keyboard.space:
             time_diff = time() - time_paused
@@ -211,7 +208,6 @@ with open("values/bosses.csv", "r") as file:
         bosses[row]["attack_frequency"] = float(bosses[row]["attack_frequency"])
         bosses[row]["attack_img"] = str(bosses[row]["attack_img"])
 
-    print(bosses)
 state = State.MENU
 game = Game(mobs, chargers, bosses)
 pgzrun.go()
