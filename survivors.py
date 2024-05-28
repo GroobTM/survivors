@@ -109,7 +109,9 @@ def update():
         if keyboard.space:
             state = State.PLAY
             game = Game(mobs, chargers, bosses)
-
+            for weapon in game.weapons:
+                weapon.set_weapon_level(0)
+            game.weapons[0].set_weapon_level(1)
     elif state == State.PAUSE:
         if keyboard.space:
             time_diff = time() - time_paused
